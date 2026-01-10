@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { margin: 0; overflow: hidden; background: #050505; color: #00ff41; font-family: monospace; }
+        .chara { position: fixed; pointer-events: none; z-index: 100; }
+        #log { position: fixed; bottom: 20px; left: 20px; font-size: 1.5rem; border: 1px solid #00ff41; padding: 10px; z-index: 1000; background: rgba(0,0,0,0.8); }
+        .essay-mode { 
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 5rem; color: white; background: rgba(255,0,0,0.8);
+            padding: 50px; border-radius: 20px; z-index: 5000; text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div id="log">READY. (真打登場) d(^_^o)</div>
+
+<script>
+const charaImg = 'unnamed (7).jpg'; // 軍団の画像
+let currentAudio = null; // 現在再生中の「生の声」を管理する入れ物
+
+// 共通の読み上げ関数
+function speak(text) {
+    window.speechSynthesis.cancel(); // 前の声を止めてから次を喋る（粋な間合い）
+    const uttr = new SpeechSynthesisUtterance(text);
+    uttr.lang = "ja-JP";
+    window.speechSynthesis.speak(uttr);
+}
+
+// 録音ファイルを再生する関数
+function playAudio(file) {
+    if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; }
+    currentAudio = new Audio(file);
+    currentAudio.play();
+}
+
+window.addEventListener('keydown', (e) => {
+    const key = e.key.toLowerCase();
+    const log = document.getElementById('log');
+
+    // --- 【Q：静寂】最優先の引き際 ---
+    if (key === 'q') {
+        window.speechSynthesis.cancel();
+        if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; }
+        document.querySelectorAll('.chara, .essay-mode, div[style*="border-bottom"]').forEach(el => el.remove());
+        log.innerHTML = "RESET. お後がよろしいようで。 d(^_^o)";
+        speak("リセットしたよ。");
+        return; // Qの時はここで処理を終える
+    }
+
+    // --- 【Shiftの有無で仕分け】名乗りの型 ---
+    if (e.shiftKey) {
+        // --- 上の句レイヤー（Shiftあり） ---
+        log.innerHTML = `SHIFT + ${e.code}: 上の句、抜刀！`;
+        
+        if (key === 'a') playAudio('ue_no_ku.mp3');
+        if (key === 's') {
+            log.innerHTML = "いざ、上の句……！(溜め)";
+            setTimeout(() => playAudio('ue_no_ku.mp3'), 200); // 200msの「溜め」
+        }
+    } else {
+        // --- 通常レイヤー（Shiftなし） ---
+        log.innerHTML = `KEY: ${e.code} / 自由演技 d(^_^o)`;
+
+        if (key === 'a') speak("（下の句）三角形のお札が舞い散る、冬の空。");
+        if (key === 's') playAudio('koe.mp3');
+        if (key === 'p') {
+            const img = document.createElement('img');
+            img.src = charaImg;
+            img.className = 'chara';
+            img.style.top = Math.random() * 70 + '%';
+            img.style.left = Math.random() * 70 + '%';
+            img.style.width = '400px';
+            document.body.appendChild(img);
+            setTimeout(() => img.remove(), 3000);
+            speak("あら、ゴミを宝に変える知恵がついたみたいね。");
+        }
+        if (key === 't') dropTriangleMoney();
+        if (key === 'e') showEssay();
+    }
+});
+
+function dropTriangleMoney() {
+    for (let i = 0; i < 20; i++) {
+        const money = document.createElement('div');
+        money.style.cssText = `position: fixed; top: -50px; left: ${Math.random() * 100}vw; width: 0; height: 0; border-left: 30px solid transparent; border-right: 30px solid transparent; border-bottom: 60px solid #f0e68c; opacity: 0.8; z-index: 150; pointer-events: none;`;
+        document.body.appendChild(money);
+        money.animate([{ transform: 'translateY(0) rotate(0deg)' }, { transform: `translateY(110vh) rotate(${Math.random() * 1000}deg) translateX(${Math.random() * 200 - 100}px)` }], { duration: 3000 + Math.random() * 2000, easing: 'ease-in' });
+        setTimeout(() => money.remove(), 5000);
+    }
+    speak("三角形のお札よ。向きで価値が変わるから、勝手に書きなさい。");
+}
+
+function showEssay() {
+    const el = document.createElement('div');
+    el.className = 'essay-mode';
+    el.innerHTML = "※個人の感想です<br>d(^_^o)";
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 2000);
+    speak("これ、ただの僕の感想だからｗ");
+}
+</script>
+</body>
+</html>
