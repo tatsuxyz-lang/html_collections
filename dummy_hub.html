@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SYSTEM CRITICAL - d(^_^o)</title>
+    <style>
+        body { background: #050505; color: #00ff41; font-family: monospace; overflow: hidden; margin: 0; }
+        .container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
+        .item { 
+            display: inline-block; padding: 15px; border: 1px solid #00ff41; 
+            margin: 10px; cursor: pointer; background: #000;
+            transition: transform 0.1s; user-select: none;
+        }
+        .falling { pointer-events: none; position: fixed !important; z-index: 9999; }
+    </style>
+</head>
+<body>
+    <div class="container" id="main">
+        <h1>【重要】システム管理パネル</h1>
+        <div class="item">データ同期</div>
+        <div class="item">ネットワーク設定</div>
+        <div class="item">秘密のアーカイブ</div>
+        <div class="item">緊急停止ボタン</div>
+        <p>※クリックすると詳細が表示されます</p>
+    </div>
+
+    <script>
+        document.addEventListener('mousedown', (e) => {
+            const target = e.target;
+            if (target.classList.contains('item') || target.tagName === 'H1' || target.tagName === 'P') {
+                breakElement(target);
+            }
+        });
+
+        function breakElement(el) {
+            if (el.classList.contains('falling')) return;
+
+            const rect = el.getBoundingClientRect();
+            el.style.width = rect.width + 'px';
+            el.style.left = rect.left + 'px';
+            el.style.top = rect.top + 'px';
+            el.classList.add('falling');
+
+            let velY = -5; // 最初少し跳ねる
+            let velX = (Math.random() - 0.5) * 10;
+            let rotation = 0;
+            let rotVel = (Math.random() - 0.5) * 10;
+            let posY = rect.top;
+            let posX = rect.left;
+
+            function fall() {
+                velY += 0.8; // 重力
+                posY += velY;
+                posX += velX;
+                rotation += rotVel;
+                
+                el.style.top = posY + 'px';
+                el.style.left = posX + 'px';
+                el.style.transform = `rotate(${rotation}deg)`;
+
+                if (posY < window.innerHeight + 100) {
+                    requestAnimationFrame(fall);
+                } else {
+                    el.remove();
+                }
+            }
+            fall();
+        }
+    </script>
+</body>
+</html>
