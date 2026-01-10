@@ -29,4 +29,34 @@
     </div>
     <div class="footer">STATUS: ONLINE / (d:^_^o)</div>
 </body>
+    <script>
+    (function() {
+        // 10%の確率、または特定の日にだけ出現させる「アホのこだわり」
+        if (Math.random() < 0.5) { 
+            const k = document.createElement('div');
+            // コイキングっぽくもあり、るるるるでもある何か
+            k.innerHTML = '🐟<span style="font-size:8px;">るるるる</span>'; 
+            k.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: -5px;
+                color: #00ff41;
+                font-family: serif;
+                font-size: 12px;
+                opacity: 0.4;
+                z-index: 9999;
+                writing-mode: vertical-rl;
+                pointer-events: none;
+                filter: grayscale(1);
+                transition: all 2s;
+            `;
+            document.body.appendChild(k);
+
+            // 時々、ちょっとだけ動く（生存確認）
+            setInterval(() => {
+                k.style.transform = `translateY(${Math.sin(Date.now()/500) * 5}px)`;
+            }, 100);
+        }
+    })();
+</script>
 </html>
