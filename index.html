@@ -39,19 +39,17 @@
             k.style.cssText = `
                 position: fixed;
                 bottom: 20px;
-                right: -5px;
-                color: #00ff41;
+                right: 0px;       /* -5pxから0pxに：隠れずにしっかり出す */
+                color: #ff0041;   /* 緑から「赤」へ：コイキングっぽさと警告感 */
                 font-family: serif;
-                font-size: 12px;
-                opacity: 0.4;
+                font-size: 24px;  /* 12pxから24pxへ：2倍のデカさ！ */
+                opacity: 0.9;     /* 0.4から0.9へ：ほぼクッキリ見える */
                 z-index: 9999;
                 writing-mode: vertical-rl;
                 pointer-events: none;
-                filter: grayscale(1);
-                transition: all 2s;
+                filter: none;     /* grayscale(1)を消して「色」を出す */
+                transition: all 0.5s; /* 2sから0.5sへ：キビキビ動く */
             `;
-            document.body.appendChild(k);
-
             // 時々、ちょっとだけ動く（生存確認）
             setInterval(() => {
                 k.style.transform = `translateY(${Math.sin(Date.now()/500) * 5}px)`;
