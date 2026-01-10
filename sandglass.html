@@ -52,6 +52,7 @@
     let lastGamma = 0;
 
     // 元々の startSystem() 関数を、ページ読み込み時に自動で走らせる
+// 元々の startSystem() 関数を、ページ読み込み時に自動で走らせる
 window.onload = function() {
     // 1. オーバーレイを消す処理は不要になるので削除
     // 2. センサー許可が必要なiPhoneなどのための処理
@@ -62,6 +63,10 @@ window.onload = function() {
         // AndroidやPCなど、許可なしで取れる場合は勝手にセンサーを開始する
         window.addEventListener('deviceorientation', handleOrientation);
     }
+    
+    // 3. 砂時計の描画ループ（アニメーション）自体は即座に開始
+    requestAnimationFrame(update); 
+};
     
     // 3. 砂時計の描画ループ（アニメーション）自体は即座に開始
     requestAnimationFrame(update); 
