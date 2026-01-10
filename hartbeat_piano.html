@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html><body style="background:black;color:lime;padding:50px;font:20px monospace">
+<h2>[translate:胡散ノ藪] 出生ピアノ 🎹</h2>
+<button onclick="play(50)" style="width:180px;height:80px;font-size:18px;margin:10px">心音 (50Hz)</button>
+<button onclick="play(25)" style="width:180px;height:80px;font-size:18px;margin:10px;background:#f00">くんっ！ (25Hz)</button>
+<button onclick="play(800)" style="width:180px;height:80px;font-size:18px;margin:10px;background:#0ff">鳥居 (800Hz)</button>
+<button onclick="play(200)" style="width:180px;height:80px;font-size:18px;margin:10px;background:#ff0">波音 (200Hz)</button>
+<p id="status">自由にクリック！お気に入り組み合わせ探して</p>
+<script>
+const ctx=new AudioContext();
+function play(freq){
+  const o=ctx.createOscillator(),g=ctx.createGain();
+  o.frequency.value=freq;
+  g.gain.value=0.6;
+  g.gain.exponentialRampToValueAtTime(0.01,ctx.currentTime+0.5);
+  o.connect(g).connect(ctx.destination);
+  o.start();o.stop(ctx.currentTime+0.5);
+  document.getElementById('status').innerText=`${freq}Hz 鳴りました！横隔膜どう？`;
+}
+</script>
+</body>
+</html>
