@@ -33,30 +33,7 @@
     init();
 
     class Particle {
-        constructor(x, y) {
-            this.x = x;
-            this.y = y;
-            this.vx = (Math.random() - 0.5) * 10;
-            this.vy = (Math.random() - 0.5) * 10;
-            this.size = Math.random() * 5 + 20; // 文字を少し大きくしました
-            
-            // ★ここを直しました！文字のリストからランダムに選ぶ
-            const chars = ['も', 'よ', '笠', '井', '山', 'る', '🐟'];
-            this.char = chars[Math.floor(Math.random() * chars.length)];
-        }
-        update(gx, gy) {
-            this.vx += gx;
-            this.vy += gy;
-            this.x += this.vx;
-            this.y += this.vy;
-            this.vx *= 0.98; 
-            this.vy *= 0.98;
-
-            if (this.x < 0 || this.x > width) this.vx *= -0.8;
-            if (this.y < 0 || this.y > height) this.vy *= -0.8;
-            this.x = Math.max(0, Math.min(width, this.x));
-            this.y = Math.max(0, Math.min(height, this.y));
-        }
+        
         draw() {
             ctx.fillStyle = '#00ff41';
             ctx.font = this.size + 'px monospace'; // フォントサイズを指定
@@ -100,6 +77,19 @@
         
         requestAnimationFrame(loop);
     }
+    // ★ここから差し込み：激しく振ったら全消去
+    let lastX, lastY;
+    window.addEventListener('devicemotion', (e) => {
+        let acc = e.accelerationIncludingGravity;
+        if (!acc) return;
+        let delta = Math.abs(acc.x - lastX) + Math.abs(acc.y - lastY);
+        if (delta > 50) { 
+            particles = []; // 粒子全消去！
+            if(navigator.vibrate) navigator.vibrate([50, 50, 50, 50]);
+        }
+        lastX = acc.x; lastY = acc.y;
+    });
+    // ★ここまで
     loop();
 </script>
 </body>
