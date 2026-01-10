@@ -5,10 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>CHAOS-GLASS - d(^_^o)</title>
     <style>
-        body { background: #050505; color: #00ff41; font-family: monospace; margin: 0; overflow: hidden; touch-wrap: none; touch-action: none; }
+        body { background: #050505; color: #00ff41; font-family: monospace; margin: 0; overflow: hidden; touch-action: none; }
         #canvas { width: 100vw; height: 100vh; display: block; }
         .ui { position: fixed; top: 10px; left: 10px; pointer-events: none; opacity: 0.7; }
-        .msg { position: fixed; bottom: 20px; right: 20px; font-size: 10px; opacity: 0.4; }
+        .msg { position: fixed; bottom: 20px; right: 20px; font-size: 10px; opacity: 0.4; text-align: right; }
+        a { color: #00ff41; text-decoration: none; border: 1px solid #00ff41; padding: 2px 5px; }
     </style>
 </head>
 <body>
@@ -16,7 +17,10 @@
         <div>PARTICLES: <span id="time-val">0</span></div>
         <div>GRAVITY: <span id="energy-val">0</span></div>
     </div>
-    <div class="msg">タップで「砂」を放流しろ。PCはクリック。るるるる。</div>
+    <div class="msg">
+        タップで放流 / 激しく振って全消去<br>
+        <a href="index.html">[HUBに戻る]</a>
+    </div>
     <canvas id="canvas"></canvas>
 
 <script>
@@ -33,36 +37,71 @@
     init();
 
     class Particle {
-        
+        constructor(x, y) {
+            this.x = x;
+            this.y = y;
+            this.vx = (Math.random() - 0.5) * 15;
+            this.vy = (Math.random() - 0.5) * 15;
+            
+            // 1%の確率で「金のる」が出る
+            const isSpecial = Math.random() < 0.01;
+            const chars = ['も', 'よ', '笠', '井', '山', 'る'];
+            
+            this.char = isSpecial ? '👑る' : chars[Math.floor(Math.random() * chars.length)];
+            this.color = isSpecial ? '#ff41ff' : '#00ff41'; 
+            this.size = isSpecial ? 40 : (Math.random() * 10 + 15);
+        }
+        update(gx, gy) {
+            this.vx += gx;
+            this.vy += gy;
+            this.x += this.vx;
+            this.y += this.vy;
+            this.vx *= 0.96; // 少し摩擦を強めに
+            this.vy *= 0.96;
+
+            if (this.x < 0 || this.x > width) this.vx *= -0.7;
+            if (this.y < 0 || this.y > height) this.vy *= -0.7;
+            this.x = Math.max(0, Math.min(width, this.x));
+            this.y = Math.max(0, Math.min(height, this.y));
+        }
         draw() {
-            ctx.fillStyle = '#00ff41';
-            ctx.font = this.size + 'px monospace'; // フォントサイズを指定
+            ctx.fillStyle = this.color;
+            ctx.font = `bold ${this.size}px monospace`;
             ctx.fillText(this.char, this.x, this.y);
         }
     }
 
     let gx = 0, gy = 0.5; 
     window.addEventListener('deviceorientation', (e) => {
-        // iPhoneなどはここが動かないけど、それでOK！
         gx = (e.gamma || 0) * 0.1;
         gy = (e.beta || 0) * 0.1;
     });
 
-    // タップやクリックで粒子を出す
+    // 激しく振ったら全消去（ちゃぶ台返し）
+    let lastX, lastY;
+    window.addEventListener('devicemotion', (e) => {
+        let acc = e.accelerationIncludingGravity;
+        if (!acc) return;
+        let delta = Math.abs(acc.x - (lastX || 0)) + Math.abs(acc.y - (lastY || 0));
+        if (delta > 60) { 
+            particles = []; 
+            if(navigator.vibrate) navigator.vibrate([50, 50]);
+        }
+        lastX = acc.x; lastY = acc.y;
+    });
+
     const addParticles = (e) => {
         const x = e.clientX || (e.touches && e.touches[0].clientX);
         const y = e.clientY || (e.touches && e.touches[0].clientY);
         for(let i=0; i<15; i++) {
             particles.push(new Particle(x, y));
         }
-        if(navigator.vibrate) navigator.vibrate(20);
     };
-
     canvas.addEventListener('mousedown', addParticles);
     canvas.addEventListener('touchstart', addParticles);
 
     function loop() {
-        ctx.fillStyle = 'rgba(5, 5, 5, 0.2)'; // 残像を残す
+        ctx.fillStyle = 'rgba(5, 5, 5, 0.2)'; 
         ctx.fillRect(0, 0, width, height);
         
         particles.forEach(p => {
@@ -70,26 +109,13 @@
             p.draw();
         });
 
-        if (particles.length > 300) particles.shift(); // 溜まりすぎ防止
+        if (particles.length > 400) particles.shift(); 
 
         document.getElementById('time-val').innerText = particles.length;
         document.getElementById('energy-val').innerText = Math.floor(Math.abs(gx) + Math.abs(gy));
         
         requestAnimationFrame(loop);
     }
-    // ★ここから差し込み：激しく振ったら全消去
-    let lastX, lastY;
-    window.addEventListener('devicemotion', (e) => {
-        let acc = e.accelerationIncludingGravity;
-        if (!acc) return;
-        let delta = Math.abs(acc.x - lastX) + Math.abs(acc.y - lastY);
-        if (delta > 50) { 
-            particles = []; // 粒子全消去！
-            if(navigator.vibrate) navigator.vibrate([50, 50, 50, 50]);
-        }
-        lastX = acc.x; lastY = acc.y;
-    });
-    // ★ここまで
     loop();
 </script>
 </body>
