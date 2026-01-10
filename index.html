@@ -29,31 +29,35 @@
     </div>
     <div class="footer">STATUS: ONLINE / (d:^_^o)</div>
 </body>
-    <script>
+   <script>
     (function() {
-        // 10%の確率、または特定の日にだけ出現させる「アホのこだわり」
+        // 確実に毎回出すなら true に書き換え。今は50%の確率
         if (Math.random() < 0.5) { 
             const k = document.createElement('div');
-            // コイキングっぽくもあり、るるるるでもある何か
-            k.innerHTML = '🐟<span style="font-size:8px;">るるるる</span>'; 
+            // 文字を大きく、色をハッキリ
+            k.innerHTML = '<span style="font-size:30px;">🐟</span><br>る<br>る<br>る<br>る'; 
             k.style.cssText = `
                 position: fixed;
-                bottom: 20px;
-                right: 0px;       /* -5pxから0pxに：隠れずにしっかり出す */
-                color: #ff0041;   /* 緑から「赤」へ：コイキングっぽさと警告感 */
-                font-family: serif;
-                font-size: 50px;  /* 12pxから24pxへ：2倍のデカさ！ */
-                opacity: 0.9;     /* 0.4から0.9へ：ほぼクッキリ見える */
-                z-index: 9999;
-                writing-mode: vertical-rl;
+                bottom: 50px;     /* 下から少し浮かせる */
+                right: 5px;       /* 右端にピタッと */
+                color: #ff4500;   /* コイキング色（オレンジ赤） */
+                font-family: "Hiragino Mincho ProN", "MS PMincho", serif;
+                font-weight: bold;
+                line-height: 1.2;
+                text-align: center;
+                opacity: 0.9;     /* クッキリ見せる */
+                z-index: 999999;  /* 他の要素をすべてぶち抜いて最前面へ */
                 pointer-events: none;
-                filter: none;     /* grayscale(1)を消して「色」を出す */
-                transition: all 0.5s; /* 2sから0.5sへ：キビキビ動く */
+                text-shadow: 0 0 10px #000; /* 背景が明るくても見えるように影 */
             `;
-            // 時々、ちょっとだけ動く（生存確認）
+            document.body.appendChild(k);
+
+            // 浮遊感のある動き（0.5秒ごとに更新）
+            let angle = 0;
             setInterval(() => {
-                k.style.transform = `translateY(${Math.sin(Date.now()/500) * 5}px)`;
-            }, 100);
+                angle += 0.1;
+                k.style.transform = `translateY(${Math.sin(angle) * 15}px) rotate(${Math.cos(angle) * 5}deg)`;
+            }, 50);
         }
     })();
 </script>
