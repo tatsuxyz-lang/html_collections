@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>CHAOS-GLASS - d(^_^o)</title>
     <style>
-        body { background: #050505; color: #00ff41; font-family: monospace; margin: 0; overflow: hidden; touch-action: none; }
+        body { background: #050505; color: #00ff41; font-family: monospace; margin: 0; overflow: hidden; touch-wrap: none; touch-action: none; }
         #canvas { width: 100vw; height: 100vh; display: block; }
         .ui { position: fixed; top: 10px; left: 10px; pointer-events: none; opacity: 0.7; }
         .msg { position: fixed; bottom: 20px; right: 20px; font-size: 10px; opacity: 0.4; }
@@ -13,10 +13,10 @@
 </head>
 <body>
     <div class="ui">
-        <div>TIME: <span id="time-val">0</span></div>
-        <div>ENERGY: <span id="energy-val">0</span></div>
+        <div>PARTICLES: <span id="time-val">0</span></div>
+        <div>GRAVITY: <span id="energy-val">0</span></div>
     </div>
-    <div class="msg">タップで「砂」を放流しろ。傾ければ流れる。るるるる。</div>
+    <div class="msg">タップで「砂」を放流しろ。PCはクリック。るるるる。</div>
     <canvas id="canvas"></canvas>
 
 <script>
@@ -32,45 +32,60 @@
     window.addEventListener('resize', init);
     init();
 
-    // sandglass (1).html のここを修正
-class Particle {
-    constructor(x, y) {
-        this.x = x;
-        this.y = y;
-        this.vx = (Math.random() - 0.5) * 10;
-        this.vy = (Math.random() - 0.5) * 10;
-        this.size = Math.random() * 5 + 2;
-        
-        // 文字の軍団を配列で作る
-        const chars = ['も', 'よ', '笠', '井', '山', 'る', '🐟'];
-        // ランダムに1文字選ぶ
-        this.char = chars[Math.floor(Math.random() * chars.length)];
-    }
-    // ...あとの update や draw はそのままでOK！
-}
+    class Particle {
+        constructor(x, y) {
+            this.x = x;
+            this.y = y;
+            this.vx = (Math.random() - 0.5) * 10;
+            this.vy = (Math.random() - 0.5) * 10;
+            this.size = Math.random() * 5 + 15; // 文字を少し大きくしました
+            
+            // ★ここを直しました！文字のリストからランダムに選ぶ
+            const chars = ['も', 'よ', '笠', '井', '山', 'る', '🐟'];
+            this.char = chars[Math.floor(Math.random() * chars.length)];
+        }
+        update(gx, gy) {
+            this.vx += gx;
+            this.vy += gy;
+            this.x += this.vx;
+            this.y += this.vy;
+            this.vx *= 0.98; 
+            this.vy *= 0.98;
+
+            if (this.x < 0 || this.x > width) this.vx *= -0.8;
+            if (this.y < 0 || this.y > height) this.vy *= -0.8;
+            this.x = Math.max(0, Math.min(width, this.x));
+            this.y = Math.max(0, Math.min(height, this.y));
+        }
         draw() {
             ctx.fillStyle = '#00ff41';
+            ctx.font = this.size + 'px monospace'; // フォントサイズを指定
             ctx.fillText(this.char, this.x, this.y);
         }
     }
 
-    let gx = 0, gy = 0.5; // 標準重力
+    let gx = 0, gy = 0.5; 
     window.addEventListener('deviceorientation', (e) => {
-        // スマホを傾けると重力の向きが変わる
+        // iPhoneなどはここが動かないけど、それでOK！
         gx = (e.gamma || 0) * 0.1;
         gy = (e.beta || 0) * 0.1;
     });
 
-    canvas.addEventListener('pointerdown', (e) => {
-        // タップした場所に「砂（ビット）」を大量生成
-        for(let i=0; i<20; i++) {
-            particles.push(new Particle(e.clientX, e.clientY));
+    // タップやクリックで粒子を出す
+    const addParticles = (e) => {
+        const x = e.clientX || (e.touches && e.touches[0].clientX);
+        const y = e.clientY || (e.touches && e.touches[0].clientY);
+        for(let i=0; i<15; i++) {
+            particles.push(new Particle(x, y));
         }
         if(navigator.vibrate) navigator.vibrate(20);
-    });
+    };
+
+    canvas.addEventListener('mousedown', addParticles);
+    canvas.addEventListener('touchstart', addParticles);
 
     function loop() {
-        ctx.fillStyle = 'rgba(5, 5, 5, 0.2)'; // 残像
+        ctx.fillStyle = 'rgba(5, 5, 5, 0.2)'; // 残像を残す
         ctx.fillRect(0, 0, width, height);
         
         particles.forEach(p => {
@@ -78,8 +93,7 @@ class Particle {
             p.draw();
         });
 
-        // 粒子が増えすぎたら古いものから消す（平穏のため）
-        if (particles.length > 500) particles.shift();
+        if (particles.length > 300) particles.shift(); // 溜まりすぎ防止
 
         document.getElementById('time-val').innerText = particles.length;
         document.getElementById('energy-val').innerText = Math.floor(Math.abs(gx) + Math.abs(gy));
