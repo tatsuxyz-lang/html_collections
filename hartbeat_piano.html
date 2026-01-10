@@ -1,21 +1,69 @@
 <!DOCTYPE html>
-<html><body style="background:black;color:lime;padding:50px;font:20px monospace">
-<h2>[translate:胡散ノ藪] 出生ピアノ 🎹</h2>
-<button onclick="play(50)" style="width:180px;height:80px;font-size:18px;margin:10px">心音 (50Hz)</button>
-<button onclick="play(25)" style="width:180px;height:80px;font-size:18px;margin:10px;background:#f00">くんっ！ (25Hz)</button>
-<button onclick="play(800)" style="width:180px;height:80px;font-size:18px;margin:10px;background:#0ff">鳥居 (800Hz)</button>
-<button onclick="play(200)" style="width:180px;height:80px;font-size:18px;margin:10px;background:#ff0">波音 (200Hz)</button>
-<p id="status">自由にクリック！お気に入り組み合わせ探して</p>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { background: black; color: lime; padding: 20px; font: 18px monospace; text-align: center; }
+        h2 { border-bottom: 1px solid lime; padding-bottom: 10px; }
+        button { width: 140px; height: 80px; font-size: 18px; margin: 5px; cursor: pointer; border: 2px solid lime; border-radius: 10px; }
+        .vol-container { background: #222; padding: 20px; margin: 20px auto; border-radius: 15px; max-width: 300px; }
+        input[type=range] { width: 100%; height: 30px; }
+        #status { margin-top: 20px; color: #ff0; }
+        .back-btn { margin-top: 30px; display: inline-block; color: lime; text-decoration: none; border: 1px solid lime; padding: 5px 15px; }
+    </style>
+</head>
+<body>
+    <h2>[胡散ノ藪] 出生ピアノ 🎹</h2>
+
+    <div class="vol-container">
+        音量調整（スマホ爆音対応）<br>
+        <input type="range" id="volumeSlider" min="0" max="3" step="0.1" value="1.5">
+        <div id="volLabel">現在のブースト: 1.5倍</div>
+    </div>
+
+    <button onclick="play(50)" style="background:#333; color:white;">心音 (50Hz)</button>
+    <button onclick="play(25)" style="background:#f00; color:white;">くんっ！ (25Hz)</button>
+    <button onclick="play(800)" style="background:#0ff; color:black;">鳥居 (800Hz)</button>
+    <button onclick="play(200)" style="background:#ff0; color:black;">波音 (200Hz)</button>
+    
+    <p id="status">自由にクリック！</p>
+    
+    <a href="index.html" class="back-btn">← 机に戻る</a>
+
 <script>
-const ctx=new AudioContext();
-function play(freq){
-  const o=ctx.createOscillator(),g=ctx.createGain();
-  o.frequency.value=freq;
-  g.gain.value=0.6;
-  g.gain.exponentialRampToValueAtTime(0.01,ctx.currentTime+0.5);
-  o.connect(g).connect(ctx.destination);
-  o.start();o.stop(ctx.currentTime+0.5);
-  document.getElementById('status').innerText=`${freq}Hz 鳴りました！横隔膜どう？`;
+let ctx = null;
+
+// 音量表示の更新
+const slider = document.getElementById('volumeSlider');
+const label = document.getElementById('volLabel');
+slider.oninput = () => { label.innerText = `現在のブースト: ${slider.value}倍`; };
+
+function play(freq) {
+    // 最初のクリックでオーディオコンテキストを起動（スマホの制限対策）
+    if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (ctx.state === 'suspended') ctx.resume();
+
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    const masterVol = ctx.createGain(); // 全体音量用のノード
+
+    o.frequency.value = freq;
+    
+    // スライダーの値を反映（最大3倍までブースト可能に）
+    masterVol.gain.value = parseFloat(slider.value);
+
+    // 減衰（余韻）の設定
+    g.gain.setValueAtTime(0.6, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+
+    // 接続: オシレーター -> 減衰器 -> マスター音量 -> 出口
+    o.connect(g).connect(masterVol).connect(ctx.destination);
+    
+    o.start();
+    o.stop(ctx.currentTime + 0.5);
+    
+    document.getElementById('status').innerText = `${freq}Hz 鳴りました！横隔膜どう？`;
 }
 </script>
 </body>
