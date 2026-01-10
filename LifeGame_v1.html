@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>127.0.0.1 - LIFE GAME SECTION</title>
+    <style>
+        body { background: #000; color: #00ff41; font-family: monospace; display: flex; flex-direction: column; align-items: center; margin: 0; overflow: hidden; }
+        canvas { border: 1px solid #333; cursor: crosshair; image-rendering: pixelated; }
+        .controls { padding: 10px; display: flex; gap: 10px; background: #111; width: 100%; justify-content: center; border-bottom: 2px solid #00ff41; }
+        button { background: #000; color: #00ff41; border: 1px solid #00ff41; padding: 5px 15px; cursor: pointer; }
+        button:hover { background: #00ff41; color: #000; }
+        .status { font-size: 12px; margin-top: 5px; }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <strong>【GAME SECTION】</strong>
+        <button onclick="reset()">ALL KILL (リセット)</button>
+        <button onclick="randomSeed()">FEED SEED (餌をばら撒く)</button>
+        <div class="status">GEN: <span id="gen">0</span></div>
+    </div>
+    <canvas id="lifeCanvas"></canvas>
+    <div style="padding: 10px; font-size: 12px;">※画面をクリックすると「餌（生命）」を直接放り込めるわよ。</div>
+
+<script>
+    const canvas = document.getElementById('lifeCanvas');
+    const ctx = canvas.getContext('2d');
+    const cellSize = 10;
+    let cols, rows, grid, gen = 0;
+
+    function init() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight - 80;
+        cols = Math.floor(canvas.width / cellSize);
+        rows = Math.floor(canvas.height / cellSize);
+        grid = Array.from({ length: cols }, () => Array(rows).fill(0));
+    }
+
+    function draw() {
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        let next = grid.map(arr => [...arr]);
+
+        for (let col = 0; col < cols; col++) {
+            for (let row = 0; row < rows; row++) {
+                let state = grid[col][row];
+                let neighbors = countNeighbors(grid, col, row);
+
+                if (state === 1 && (neighbors < 2 || neighbors > 3)) next[col][row] = 0;
+                else if (state === 0 && neighbors === 3) next[col][row] = 1;
+
+                if (state === 1) {
+                    ctx.fillStyle = '#00ff41';
+                    ctx.fillRect(col * cellSize, row * cellSize, cellSize - 1, cellSize - 1);
+                }
+            }
+        }
+        grid = next;
+        document.getElementById('gen').innerText = gen++;
+        requestAnimationFrame(draw);
+    }
+
+    function countNeighbors(grid, x, y) {
+        let sum = 0;
+        for (let i = -1; i < 2; i++) {
+            for (let j = -1; j < 2; j++) {
+                let col = (x + i + cols) % cols;
+                let row = (y + j + rows) % rows;
+                sum += grid[col][row];
+            }
+        }
+        sum -= grid[x][y];
+        return sum;
+    }
+
+    // クリックで餌（生命）を置く
+    canvas.addEventListener('mousedown', e => {
+        const x = Math.floor(e.clientX / cellSize);
+        const y = Math.floor((e.clientY - 50) / cellSize);
+        if(grid[x] && grid[x][y] !== undefined) {
+            grid[x][y] = 1; // 餌を置く
+            // 周囲にも少し散らす
+            if(grid[x+1]) grid[x+1][y] = 1;
+            if(grid[x-1]) grid[x-1][y] = 1;
+            if(grid[x][y+1]) grid[x][y+1] = 1;
+        }
+    });
+
+    function randomSeed() {
+        for (let i = 0; i < 500; i++) {
+            grid[Math.floor(Math.random()*cols)][Math.floor(Math.random()*rows)] = 1;
+        }
+    }
+
+    function reset() {
+        grid = Array.from({ length: cols }, () => Array(rows).fill(0));
+        gen = 0;
+    }
+
+    init();
+    draw();
+</script>
+</body>
+</html>

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Prime Spiral - Auto Zoom</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #000; }
+        canvas { display: block; }
+        #info {
+            position: fixed; top: 10px; left: 10px;
+            color: #00ff41; font-family: monospace; font-size: 18px;
+            text-shadow: 0 0 5px #00ff41; pointer-events: none;
+            background: rgba(0,0,0,0.5); padding: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="info">
+        CHECKING: <span id="count">0</span><br>
+        PRIME DOTS: <span id="dots">0</span>
+    </div>
+    <canvas id="canvas"></canvas>
+
+<script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const countDisplay = document.getElementById('count');
+    const dotsDisplay = document.getElementById('dots');
+
+    let n = 1;
+    let dotCount = 0;
+    let primes = []; // 描画済みの素数を保存してズームに対応させるわ
+
+    function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+
+    function isPrime(num) {
+        if (num < 2) return false;
+        if (num === 2) return true;
+        if (num % 2 === 0) return false;
+        for (let i = 3; i <= Math.sqrt(num); i += 2) {
+            if (num % i === 0) return false;
+        }
+        return true;
+    }
+
+    function loop() {
+        // 1フレームごとに計算する数（欲張りすぎると重くなるから調整したわ）
+        const batchSize = 500; 
+        for (let i = 0; i < batchSize; i++) {
+            if (isPrime(n)) {
+                // 素数だったら位置（r, theta）を記録
+                primes.push({ r: n, theta: n });
+                dotCount++;
+            }
+            n++;
+        }
+
+        // 描画処理
+        ctx.fillStyle = 'black';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // --- ここが魔法のズームロジックよ！ ---
+        // 一番外側の素数が画面に収まるようにスケールを自動調整するわ
+        const maxR = n; 
+        const margin = 1.1; // 10%の余白
+        const scale = (Math.min(canvas.width, canvas.height) / 2) / (maxR * margin);
+
+        ctx.fillStyle = '#00ff41';
+        for (let p of primes) {
+            const drawR = p.r * scale;
+            const x = canvas.width / 2 + drawR * Math.cos(p.theta);
+            const y = canvas.height / 2 + drawR * Math.sin(p.theta);
+            
+            // 小さな点として描画
+            ctx.fillRect(x, y, 1, 1);
+        }
+
+        countDisplay.innerText = n.toLocaleString();
+        dotsDisplay.innerText = dotCount.toLocaleString();
+        requestAnimationFrame(loop);
+    }
+
+    window.addEventListener('resize', resize);
+    resize();
+    loop();
+</script>
+</body>
+</html>
