@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SAND-GLASS - d(^_^o)</title>
+    <style>
+        :root { --neon: #00ff41; --bg: #050505; }
+        body { background: var(--bg); color: var(--neon); font-family: monospace; margin: 0; display: flex; flex-direction: column; align-items: center; height: 100vh; overflow: hidden; }
+        
+        .timer-zone { flex: 1; width: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; border: 1px solid rgba(0,255,65,0.2); position: relative; }
+        .upper { border-bottom: 2px solid var(--neon); }
+        
+        .time-display { font-size: 3rem; font-weight: bold; text-shadow: 0 0 10px var(--neon); }
+        .label { font-size: 0.8rem; opacity: 0.6; position: absolute; top: 10px; left: 10px; }
+        
+        .controls { padding: 15px; display: flex; gap: 10px; background: #111; width: 100%; justify-content: center; flex-wrap: wrap; }
+        button { background: none; border: 1px solid var(--neon); color: var(--neon); padding: 10px; min-width: 60px; border-radius: 5px; }
+        button:active { background: var(--neon); color: var(--bg); }
+        .chabudai { border-color: #ff0000; color: #ff0000; font-weight: bold; width: 100%; margin-top: 10px; }
+
+        #start-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+    </style>
+</head>
+<body>
+
+    <div id="start-overlay">
+        <button onclick="startSystem()" style="font-size: 1.5rem; padding: 20px;">システム起動 (センサー許可)</button>
+        <p style="margin-top:20px; font-size: 12px;">スマホの向きで砂時計が反転します</p>
+    </div>
+
+    <div class="timer-zone upper" id="upper-zone">
+        <div class="label">REMAINING (残り)</div>
+        <div class="time-display" id="remain-txt">03:00</div>
+    </div>
+
+    <div class="timer-zone lower" id="lower-zone">
+        <div class="label">ELAPSED (経過)</div>
+        <div class="time-display" id="elapsed-txt">00:00</div>
+    </div>
+
+    <div class="controls">
+        <button onclick="setTime(180)">3分</button>
+        <button onclick="setTime(300)">5分</button>
+        <button onclick="setTime(600)">10分</button>
+        <button class="chabudai" onclick="chabudai()">ちゃぶ台ドッカン！ (RESET)</button>
+        <a href="index.html" style="color:var(--neon); text-decoration:none; font-size:12px; width:100%; text-align:center; margin-top:10px;">[HUBに戻る]</a>
+    </div>
+
+<script>
+    let totalTime = 180;
+    let remain = 180;
+    let elapsed = 0;
+    let isRunning = false;
+    let lastGamma = 0;
+
+    function startSystem() {
+        document.getElementById('start-overlay').style.display = 'none';
+        // iOSのセンサー許可リクエスト
+        if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+            DeviceOrientationEvent.requestPermission();
+        }
+        window.addEventListener('deviceorientation', handleOrientation);
+        setInterval(tick, 1000);
+    }
+
+    function setTime(sec) {
+        totalTime = sec;
+        remain = sec;
+        elapsed = 0;
+        isRunning = true;
+        updateDisplay();
+    }
+
+    function handleOrientation(event) {
+        // gammaは左右の傾き、betaは前後の傾き
+        let beta = event.beta; 
+        // 端末が逆さま（betaがマイナス）になったら「ひっくり返った」と判定
+        if (Math.abs(beta) > 140 && isRunning) {
+            reverseSand();
+        }
+    }
+
+    function reverseSand() {
+        // ひっくり返した瞬間に「残り」と「経過」を入れ替える
+        let temp = remain;
+        remain = elapsed;
+        elapsed = temp;
+        // 合計時間も現在の状況に合わせて再設定
+        totalTime = remain + elapsed;
+        if(navigator.vibrate) navigator.vibrate([100, 50, 100]);
+    }
+
+    function tick() {
+        if (!isRunning || remain <= 0) return;
+        remain--;
+        elapsed++;
+        updateDisplay();
+        if (remain <= 0) {
+            alert("時間切れ！お後がよろしいようで。");
+            isRunning = false;
+        }
+    }
+
+    function updateDisplay() {
+        document.getElementById('remain-txt').innerText = format(remain);
+        document.getElementById('elapsed-txt').innerText = format(elapsed);
+    }
+
+    function format(sec) {
+        let m = Math.floor(sec / 60).toString().padStart(2, '0');
+        let s = (sec % 60).toString().padStart(2, '0');
+        return `${m}:${s}`;
+    }
+
+    function chabudai() {
+        if(navigator.vibrate) navigator.vibrate(500);
+        alert("ちゃぶ台ドッカン！！！");
+        setTime(totalTime); // リセット
+    }
+</script>
+</body>
+</html>
