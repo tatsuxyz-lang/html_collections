@@ -32,29 +32,22 @@
     window.addEventListener('resize', init);
     init();
 
-    class Particle {
-        constructor(x, y) {
-            this.x = x;
-            this.y = y;
-            this.vx = (Math.random() - 0.5) * 10;
-            this.vy = (Math.random() - 0.5) * 10;
-            this.size = Math.random() * 5 + 2;
-            this.char = Math.random() > 0.5 ? 'も' : 'よ' : '笠' : '井'　: '山';
-        }
-        update(gx, gy) {
-            this.vx += gx;
-            this.vy += gy;
-            this.x += this.vx;
-            this.y += this.vy;
-            this.vx *= 0.98; // 摩擦
-            this.vy *= 0.98;
-
-            // 壁バウンド
-            if (this.x < 0 || this.x > width) this.vx *= -0.8;
-            if (this.y < 0 || this.y > height) this.vy *= -0.8;
-            this.x = Math.max(0, Math.min(width, this.x));
-            this.y = Math.max(0, Math.min(height, this.y));
-        }
+    // sandglass (1).html のここを修正
+class Particle {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * 10;
+        this.vy = (Math.random() - 0.5) * 10;
+        this.size = Math.random() * 5 + 2;
+        
+        // 文字の軍団を配列で作る
+        const chars = ['も', 'よ', '笠', '井', '山', 'る', '🐟'];
+        // ランダムに1文字選ぶ
+        this.char = chars[Math.floor(Math.random() * chars.length)];
+    }
+    // ...あとの update や draw はそのままでOK！
+}
         draw() {
             ctx.fillStyle = '#00ff41';
             ctx.fillText(this.char, this.x, this.y);
