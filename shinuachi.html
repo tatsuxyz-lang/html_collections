@@ -76,6 +76,13 @@ function perform(action) {
         speak("リセットしたよ。");
         return;
     }
+    // shinuachi.html のどこかにこっそり追加
+if (new Date().getDate() === 11) { // 11日だけ出現
+    const koiking = document.createElement('div');
+    koiking.innerHTML = '🐟'; // 伝説のコイキング
+    koiking.style.cssText = "position:fixed; bottom:0; right:10px; font-size:10px; opacity:0.3;";
+    document.body.appendChild(koiking);
+}
 
     if (action === 'shift-a') {
         log.innerHTML = "上の句、抜刀！";
