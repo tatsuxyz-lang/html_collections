@@ -51,15 +51,21 @@
     let isRunning = false;
     let lastGamma = 0;
 
-    function startSystem() {
-        document.getElementById('start-overlay').style.display = 'none';
-        // iOSのセンサー許可リクエスト
-        if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-            DeviceOrientationEvent.requestPermission();
-        }
+    // 元々の startSystem() 関数を、ページ読み込み時に自動で走らせる
+window.onload = function() {
+    // 1. オーバーレイを消す処理は不要になるので削除
+    // 2. センサー許可が必要なiPhoneなどのための処理
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+        // iOS（許可が必要な端末）の場合は、今回はあえて深追いしない。
+        // 何もせず、ただ砂が落ちる景色だけを見せる。
+    } else {
+        // AndroidやPCなど、許可なしで取れる場合は勝手にセンサーを開始する
         window.addEventListener('deviceorientation', handleOrientation);
-        setInterval(tick, 1000);
     }
+    
+    // 3. 砂時計の描画ループ（アニメーション）自体は即座に開始
+    requestAnimationFrame(update); 
+};
 
     function setTime(sec) {
         totalTime = sec;
