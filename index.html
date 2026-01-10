@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>MY DESK - d(^_^o)</title>
+    <style>
+        body { background: #000; color: #0f0; font-family: monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        h1 { border-bottom: 2px solid #0f0; }
+        .menu { font-size: 2rem; line-height: 2; }
+        a { color: #0f0; text-decoration: none; cursor: pointer; }
+        a:hover { background: #0f0; color: #000; }
+        .hint { margin-top: 50px; color: #555; }
+    </style>
+</head>
+<body>
+    <h1>BASE CAMP d(^_^o)</h1>
+    <div class="menu">
+        <div>1. <a href="shinuachi.html">真打版 (演出/セリフ)</a></div>
+        <div>2. <a href="hartbeat_piano.html">出生ピアノ (音遊び)</a></div>
+    </div>
+    <div class="hint">キーボードの [1] [2] でも飛べるよ</div>
+
+    <script>
+        window.addEventListener('keydown', (e) => {
+            if (e.key === '1') window.location.href = 'shinuachi.html';
+            if (e.key === '2') window.location.href = 'hartbeat_piano.html';
+        });
+    </script>
+</body>
+</html>
