@@ -54,15 +54,20 @@
     // 元々の startSystem() 関数を、ページ読み込み時に自動で走らせる
 // 元々の startSystem() 関数を、ページ読み込み時に自動で走らせる
 window.onload = function() {
-    // 1. オーバーレイを消す処理は不要になるので削除
-    // 2. センサー許可が必要なiPhoneなどのための処理
+    // 1. センサーの準備（取れる環境なら取る、ダメなら深追いしない）
     if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-        // iOS（許可が必要な端末）の場合は、今回はあえて深追いしない。
-        // 何もせず、ただ砂が落ちる景色だけを見せる。
+        // iOS（深追いしない）
     } else {
-        // AndroidやPCなど、許可なしで取れる場合は勝手にセンサーを開始する
         window.addEventListener('deviceorientation', handleOrientation);
     }
+    
+    // 2. ★ここが重要：1秒ごとに tick() を実行して時間を進める
+    setInterval(tick, 1000); 
+
+    // 3. 描画開始
+    isRunning = true; // 最初から動いている状態にする
+    updateDisplay();
+};
     
     // 3. 砂時計の描画ループ（アニメーション）自体は即座に開始
     requestAnimationFrame(update); 
