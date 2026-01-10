@@ -3,134 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SAND-GLASS - d(^_^o)</title>
+    <title>CHAOS-GLASS - d(^_^o)</title>
     <style>
-        :root { --neon: #00ff41; --bg: #050505; }
-        body { background: var(--bg); color: var(--neon); font-family: monospace; margin: 0; display: flex; flex-direction: column; align-items: center; height: 100vh; overflow: hidden; }
-        
-        .timer-zone { flex: 1; width: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; border: 1px solid rgba(0,255,65,0.2); position: relative; }
-        .upper { border-bottom: 2px solid var(--neon); }
-        
-        .time-display { font-size: 3rem; font-weight: bold; text-shadow: 0 0 10px var(--neon); }
-        .label { font-size: 0.8rem; opacity: 0.6; position: absolute; top: 10px; left: 10px; }
-        
-        .controls { padding: 15px; display: flex; gap: 10px; background: #111; width: 100%; justify-content: center; flex-wrap: wrap; }
-        button { background: none; border: 1px solid var(--neon); color: var(--neon); padding: 10px; min-width: 60px; border-radius: 5px; }
-        button:active { background: var(--neon); color: var(--bg); }
-        .chabudai { border-color: #ff0000; color: #ff0000; font-weight: bold; width: 100%; margin-top: 10px; }
-
-        #start-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        body { background: #050505; color: #00ff41; font-family: monospace; margin: 0; overflow: hidden; touch-action: none; }
+        #canvas { width: 100vw; height: 100vh; display: block; }
+        .ui { position: fixed; top: 10px; left: 10px; pointer-events: none; opacity: 0.7; }
+        .msg { position: fixed; bottom: 20px; right: 20px; font-size: 10px; opacity: 0.4; }
     </style>
 </head>
 <body>
-
-   
-
-    <div class="timer-zone upper" id="upper-zone">
-        <div class="label">REMAINING (残り)</div>
-        <div class="time-display" id="remain-txt">03:00</div>
+    <div class="ui">
+        <div>TIME: <span id="time-val">0</span></div>
+        <div>ENERGY: <span id="energy-val">0</span></div>
     </div>
-
-    <div class="timer-zone lower" id="lower-zone">
-        <div class="label">ELAPSED (経過)</div>
-        <div class="time-display" id="elapsed-txt">00:00</div>
-    </div>
-
-    <div class="controls">
-        <button onclick="setTime(180)">3分</button>
-        <button onclick="setTime(300)">5分</button>
-        <button onclick="setTime(600)">10分</button>
-        <button class="chabudai" onclick="chabudai()">ちゃぶ台ドッカン！ (RESET)</button>
-        <a href="index.html" style="color:var(--neon); text-decoration:none; font-size:12px; width:100%; text-align:center; margin-top:10px;">[HUBに戻る]</a>
-    </div>
+    <div class="msg">タップで「砂」を放流しろ。傾ければ流れる。るるるる。</div>
+    <canvas id="canvas"></canvas>
 
 <script>
-    let totalTime = 180;
-    let remain = 180;
-    let elapsed = 0;
-    let isRunning = false;
-    let lastGamma = 0;
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+    let width, height;
 
-    // 元々の startSystem() 関数を、ページ読み込み時に自動で走らせる
-// 元々の startSystem() 関数を、ページ読み込み時に自動で走らせる
-window.onload = function() {
-    // 1. センサーの準備（取れる環境なら取る、ダメなら深追いしない）
-    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-        // iOS（深追いしない）
-    } else {
-        window.addEventListener('deviceorientation', handleOrientation);
+    function init() {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
     }
-    
-    // 2. ★ここが重要：1秒ごとに tick() を実行して時間を進める
-    setInterval(tick, 1000); 
+    window.addEventListener('resize', init);
+    init();
 
-    // 3. 描画開始
-    isRunning = true; // 最初から動いている状態にする
-    updateDisplay();
-};
-    
-    // 3. 砂時計の描画ループ（アニメーション）自体は即座に開始
-    requestAnimationFrame(update); 
-};
-    
-    // 3. 砂時計の描画ループ（アニメーション）自体は即座に開始
-    requestAnimationFrame(update); 
-};
+    class Particle {
+        constructor(x, y) {
+            this.x = x;
+            this.y = y;
+            this.vx = (Math.random() - 0.5) * 10;
+            this.vy = (Math.random() - 0.5) * 10;
+            this.size = Math.random() * 5 + 2;
+            this.char = Math.random() > 0.5 ? '0' : '1';
+        }
+        update(gx, gy) {
+            this.vx += gx;
+            this.vy += gy;
+            this.x += this.vx;
+            this.y += this.vy;
+            this.vx *= 0.98; // 摩擦
+            this.vy *= 0.98;
 
-    function setTime(sec) {
-        totalTime = sec;
-        remain = sec;
-        elapsed = 0;
-        isRunning = true;
-        updateDisplay();
-    }
-
-    function handleOrientation(event) {
-        // gammaは左右の傾き、betaは前後の傾き
-        let beta = event.beta; 
-        // 端末が逆さま（betaがマイナス）になったら「ひっくり返った」と判定
-        if (Math.abs(beta) > 140 && isRunning) {
-            reverseSand();
+            // 壁バウンド
+            if (this.x < 0 || this.x > width) this.vx *= -0.8;
+            if (this.y < 0 || this.y > height) this.vy *= -0.8;
+            this.x = Math.max(0, Math.min(width, this.x));
+            this.y = Math.max(0, Math.min(height, this.y));
+        }
+        draw() {
+            ctx.fillStyle = '#00ff41';
+            ctx.fillText(this.char, this.x, this.y);
         }
     }
 
-    function reverseSand() {
-        // ひっくり返した瞬間に「残り」と「経過」を入れ替える
-        let temp = remain;
-        remain = elapsed;
-        elapsed = temp;
-        // 合計時間も現在の状況に合わせて再設定
-        totalTime = remain + elapsed;
-        if(navigator.vibrate) navigator.vibrate([100, 50, 100]);
-    }
+    let gx = 0, gy = 0.5; // 標準重力
+    window.addEventListener('deviceorientation', (e) => {
+        // スマホを傾けると重力の向きが変わる
+        gx = (e.gamma || 0) * 0.1;
+        gy = (e.beta || 0) * 0.1;
+    });
 
-    function tick() {
-        if (!isRunning || remain <= 0) return;
-        remain--;
-        elapsed++;
-        updateDisplay();
-        if (remain <= 0) {
-            alert("時間切れ！お後がよろしいようで。");
-            isRunning = false;
+    canvas.addEventListener('pointerdown', (e) => {
+        // タップした場所に「砂（ビット）」を大量生成
+        for(let i=0; i<20; i++) {
+            particles.push(new Particle(e.clientX, e.clientY));
         }
-    }
+        if(navigator.vibrate) navigator.vibrate(20);
+    });
 
-    function updateDisplay() {
-        document.getElementById('remain-txt').innerText = format(remain);
-        document.getElementById('elapsed-txt').innerText = format(elapsed);
-    }
+    function loop() {
+        ctx.fillStyle = 'rgba(5, 5, 5, 0.2)'; // 残像
+        ctx.fillRect(0, 0, width, height);
+        
+        particles.forEach(p => {
+            p.update(gx, gy);
+            p.draw();
+        });
 
-    function format(sec) {
-        let m = Math.floor(sec / 60).toString().padStart(2, '0');
-        let s = (sec % 60).toString().padStart(2, '0');
-        return `${m}:${s}`;
-    }
+        // 粒子が増えすぎたら古いものから消す（平穏のため）
+        if (particles.length > 500) particles.shift();
 
-    function chabudai() {
-        if(navigator.vibrate) navigator.vibrate(500);
-        alert("ちゃぶ台ドッカン！！！");
-        setTime(totalTime); // リセット
+        document.getElementById('time-val').innerText = particles.length;
+        document.getElementById('energy-val').innerText = Math.floor(Math.abs(gx) + Math.abs(gy));
+        
+        requestAnimationFrame(loop);
     }
+    loop();
 </script>
 </body>
 </html>
