@@ -2,54 +2,72 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>127.0.0.1 - NOISE ORCHESTRA</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NOISE ORCHESTRA - iOS FIXED</title>
     <style>
         body { background: #000; color: #00ff41; font-family: monospace; margin: 0; overflow: hidden; display: flex; flex-direction: column; align-items: center; }
-        canvas { image-rendering: pixelated; border-bottom: 1px solid #333; cursor: crosshair; }
-        .controls { padding: 10px; background: #111; width: 100%; display: flex; gap: 20px; justify-content: center; font-size: 12px; }
-        .legend { display: flex; gap: 10px; }
+        canvas { image-rendering: pixelated; border-bottom: 1px solid #333; cursor: crosshair; touch-action: none; }
+        .controls { padding: 10px; background: #111; width: 100%; display: flex; gap: 10px; justify-content: center; font-size: 11px; flex-wrap: wrap; }
+        .legend { display: flex; gap: 5px; align-items: center; }
         .dot { width: 10px; height: 10px; border: 1px solid #fff; }
+        /* iPhone用：開始ボタン */
+        #start-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 9999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+        }
+        #start-btn {
+            padding: 20px 40px; font-size: 20px; background: none; border: 2px solid #00ff41; color: #00ff41; cursor: pointer;
+        }
     </style>
 </head>
 <body>
+    <div id="start-overlay">
+        <button id="start-btn">TAP TO START AUDIO</button>
+        <p style="margin-top:20px; font-size:12px;">※iPhoneはこれ押さないと鳴らないのよ</p>
+    </div>
+
     <div class="controls">
-        <strong>【SUMIKKO NOISE SECTION】</strong>
+        <strong>【SUMIKKO NOISE】</strong>
         <div class="legend"><div class="dot" style="background:#004400"></div> ✊(Low)</div>
         <div class="legend"><div class="dot" style="background:#00ff41"></div> ✌️(High)</div>
         <div class="legend"><div class="dot" style="background:#008800"></div> ✋(Pad)</div>
-        <span>CLICK TO FEED & START AUDIO</span>
+        <a href="index.html" style="color:#00ff41; margin-left:10px;">[HUB]</a>
     </div>
     <canvas id="c"></canvas>
 
 <script>
     const canvas = document.getElementById('c');
     const ctx = canvas.getContext('2d');
-    const size = 15; // セルの大きさ
+    const size = 15;
     let cols, rows, grid;
-    
-    // オーディオ設定
     let audioCtx;
-    function initAudio() {
+
+    // iOS/iPhoneのロックを解除するための儀式
+    document.getElementById('start-btn').addEventListener('click', () => {
         if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    }
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        document.getElementById('start-overlay').style.display = 'none';
+        // 最初の音を出す
+        playTone(440, 'sine', 0, 0.1); 
+    });
 
     function playTone(freq, type, vol, duration) {
-        if (!audioCtx) return;
+        if (!audioCtx || audioCtx.state !== 'running') return;
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         osc.type = type;
         osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
         gain.gain.setValueAtTime(vol, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
+        osc.connect(gain).connect(audioCtx.destination);
         osc.start();
         osc.stop(audioCtx.currentTime + duration);
     }
 
     function init() {
         canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight - 40;
+        canvas.height = window.innerHeight - 60;
         cols = Math.floor(canvas.width / size);
         rows = Math.floor(canvas.height / size);
         grid = Array.from({ length: cols }, () => Array(rows).fill(-1));
@@ -57,49 +75,36 @@
 
     function update() {
         let next = grid.map(arr => [...arr]);
-        let counts = [0, 0, 0]; // 0:グー, 1:チョキ, 2:パー
-
         for (let x = 0; x < cols; x++) {
             for (let y = 0; y < rows; y++) {
                 let current = grid[x][y];
                 if (current === -1) continue;
-                counts[current]++;
-
-                // 近傍の「天敵」を探す
-                let target = (current + 1) % 3; // グーならチョキを、チョキならパーを...
+                let target = (current + 1) % 3;
                 let neighbors = [[-1,0],[1,0],[0,-1],[0,1]];
                 for (let [dx, dy] of neighbors) {
                     let nx = (x + dx + cols) % cols;
                     let ny = (y + dy + rows) % rows;
-                    if (grid[nx][ny] === target) {
-                        // 天敵を自分と同じ種に変える（捕食）
-                        next[nx][ny] = current;
-                    }
+                    if (grid[nx][ny] === target) next[nx][ny] = current;
                 }
             }
         }
         grid = next;
-
-        // 1秒に1回程度のランダム注入（餌やり）
         if (Math.random() < 0.1) {
             let rx = Math.floor(Math.random() * cols);
             let ry = Math.floor(Math.random() * rows);
             let type = Math.floor(Math.random() * 3);
             grid[rx][ry] = type;
-            
-            // 音を鳴らす
-            if (type === 0) playTone(100 + Math.random()*50, 'sine', 0.1, 0.5); // ✊ 重い音
-            if (type === 1) playTone(800 + Math.random()*400, 'triangle', 0.05, 0.1); // ✌️ 鋭い音
-            if (type === 2) playTone(300 + Math.random()*100, 'square', 0.02, 1.0); // ✋ 広がる音
+            if (type === 0) playTone(100 + Math.random()*50, 'sine', 0.1, 0.5);
+            if (type === 1) playTone(800 + Math.random()*400, 'triangle', 0.05, 0.1);
+            if (type === 2) playTone(300 + Math.random()*100, 'square', 0.02, 1.0);
         }
-        draw(counts);
+        draw();
     }
 
-    function draw(counts) {
+    function draw() {
         ctx.fillStyle = '#000';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         const colors = ['#004400', '#00ff41', '#008800'];
-        
         for (let x = 0; x < cols; x++) {
             for (let y = 0; y < rows; y++) {
                 if (grid[x][y] !== -1) {
@@ -111,12 +116,17 @@
         requestAnimationFrame(update);
     }
 
-    canvas.addEventListener('mousedown', (e) => {
-        initAudio();
-        let x = Math.floor(e.clientX / size);
-        let y = Math.floor((e.clientY - 40) / size);
-        grid[x][y] = Math.floor(Math.random() * 3);
-    });
+    // タッチ・マウス共通の挙動
+    const trigger = (e) => {
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        let x = Math.floor(clientX / size);
+        let y = Math.floor((clientY - 60) / size);
+        if(grid[x]) grid[x][y] = Math.floor(Math.random() * 3);
+    };
+
+    canvas.addEventListener('mousedown', trigger);
+    canvas.addEventListener('touchstart', (e) => { e.preventDefault(); trigger(e); }, {passive:false});
 
     window.addEventListener('resize', init);
     init();
