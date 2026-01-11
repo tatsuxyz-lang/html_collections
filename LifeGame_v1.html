@@ -96,26 +96,30 @@
     draw();
 
     // --- 【修正済】自律復活ギミック ---
-    setInterval(() => {
-        // 1. 生きているセルの総数を数える
-        let livingCount = 0;
-        for(let c=0; c<cols; c++) {
-            for(let r=0; r<rows; r++) {
-                if(grid[c][r] === 1) livingCount++;
-            }
+    // --- ライフゲーム自律復活：ゆらぎアップデート ---
+setInterval(() => {
+    let livingCount = 0;
+    for(let c=0; c<cols; c++) {
+        for(let r=0; r<rows; r++) {
+            if(grid[c][r] === 1) livingCount++;
         }
+    }
+    
+    // 30個以下、あるいは「動き」が止まった時のために少し早めに介入
+    if (livingCount < 40) { 
+        // 画面のどこかに「グライダー」という、勝手に移動し続ける生命体を放流する
+        const rx = Math.floor(Math.random() * (cols - 5));
+        const ry = Math.floor(Math.random() * (rows - 5));
         
-        // 2. 30個以下なら、新しい「種」を撒く
-        if (livingCount < 30) { 
-            const rx = Math.floor(Math.random() * (cols - 2));
-            const ry = Math.floor(Math.random() * (rows - 2));
-            // 繁殖しやすいブロックパターン
-            const patterns = [[0,0], [1,0], [0,1], [1,1]];
-            patterns.forEach(([dx, dy]) => {
-                grid[rx+dx][ry+dy] = 1;
-            });
-        }
-    }, 2000);
+        // グライダー（右下に歩いていく形）
+        // これを入れると、画面内を旅するので「8個で止まる」のを防げます
+        const glider = [[0,1], [1,2], [2,0], [2,1], [2,2]];
+        
+        glider.forEach(([dx, dy]) => {
+            if(grid[rx+dx]) grid[rx+dx][ry+dy] = 1;
+        });
+    }
+}, 3000); // 3秒ごとにパトロール
 </script>
 </body>
 </html>
