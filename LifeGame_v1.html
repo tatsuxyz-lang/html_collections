@@ -105,18 +105,23 @@ setInterval(() => {
         }
     }
     
-    // 30個以下、あるいは「動き」が止まった時のために少し早めに介入
     if (livingCount < 40) { 
-        // 画面のどこかに「グライダー」という、勝手に移動し続ける生命体を放流する
         const rx = Math.floor(Math.random() * (cols - 5));
         const ry = Math.floor(Math.random() * (rows - 5));
         
-        // グライダー（右下に歩いていく形）
-        // これを入れると、画面内を旅するので「8個で止まる」のを防げます
-        const glider = [[0,1], [1,2], [2,0], [2,1], [2,2]];
+        // 基本のグライダー（右下へ）
+        let glider = [[0,1], [1,2], [2,0], [2,1], [2,2]];
+
+        // 5回に1回（20%）の確率で、形を反転させて逆走させる
+        if (Math.random() < 0.2) {
+            // 逆方向（左下へ）
+            glider = [[2,1], [1,2], [0,0], [0,1], [0,2]];
+        }
         
         glider.forEach(([dx, dy]) => {
-            if(grid[rx+dx]) grid[rx+dx][ry+dy] = 1;
+            if(grid[rx+dx] && grid[rx+dx][ry+dy] !== undefined) {
+                grid[rx+dx][ry+dy] = 1;
+            }
         });
     }
 }, 3000); // 3秒ごとにパトロール
