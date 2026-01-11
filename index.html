@@ -32,55 +32,48 @@
     <div class="footer">STATUS: ONLINE / (d:^_^o)</div>
 </body>
    <script>
-    (function() {
-        // 確実に毎回出すなら true に書き換え。今は50%の確率
-        if (Math.random() < 0.5) { 
-            const k = document.createElement('div');
-            // 文字を大きく、色をハッキリ
-            k.innerHTML = '<span style="font-size:30px;">🐟</span><br>る<br>る<br>る<br>る'; 
-            k.style.cssText = `
-                position: fixed;
-                bottom: 50px;     /* 下から少し浮かせる */
-                right: 5px;       /* 右端にピタッと */
-                color: #ff4500;   /* コイキング色（オレンジ赤） */
-                font-family: "Hiragino Mincho ProN", "MS PMincho", serif;
-                font-weight: bold;
-                line-height: 1.2;
-                text-align: center;
-                opacity: 0.9;     /* クッキリ見せる */
-                z-index: 999999;  /* 他の要素をすべてぶち抜いて最前面へ */
-                pointer-events: none;
-                text-shadow: 0 0 10px #000; /* 背景が明るくても見えるように影 */
-            `;
-            document.body.appendChild(k);
+(function() {
+    // 承認欲求のカウンター
+    let secretCounter = 0;
+    let lastClickTime = 0;
 
-            // 浮遊感のある動き（0.5秒ごとに更新）
-            let angle = 0;
-            setInterval(() => {
-                angle += 0.1;
-                k.style.transform = `translateY(${Math.sin(angle) * 15}px) rotate(${Math.cos(angle) * 5}deg)`;
-            }, 50);
-            
-       // --- 承認欲求の隠しギミック ---
-let secretCounter = 0;
-document.addEventListener('click', (e) => {
-    // 画面の左上（50px以内）を連続で叩くと発動
-    if (e.clientX < 50 && e.clientY < 50) {
-        secretCounter++;
-        if (secretCounter === 5) {
-            // 5回叩いた瞬間に、サイトの雰囲気を一変させる
-            document.body.style.backgroundColor = "#ff00ff"; // どぎついピンクに
-            alert("ボクを見つけてくれてありがとう！ d(^_^o)");
-            
-            // さらに、すべての文字の色をデタラメに変えるとか
-            const allElements = document.querySelectorAll('*');
-            allElements.forEach(el => {
-                el.style.color = "#fff";
-                el.style.fontWeight = "bold";
-            });
-            secretCounter = 0; // カウンターリセット
+    // 画面全体で入力を監視
+    document.addEventListener('pointerdown', (e) => {
+        const currentTime = new Date().getTime();
+        
+        // 画面の左上（80px以内）を狙い撃ち
+        if (e.clientX < 80 && e.clientY < 80) {
+            // 前回のクリックから1秒以内ならカウントアップ（連打判定）
+            if (currentTime - lastClickTime < 1000) {
+                secretCounter++;
+            } else {
+                secretCounter = 1;
+            }
+            lastClickTime = currentTime;
+
+            // 5回連打で発動！
+            if (secretCounter >= 5) {
+                // 1. 画面をどぎついピンクに（暴力的な自己主張）
+                document.body.style.background = "#ff00ff";
+                
+                // 2. 文字を白抜きにして「俺」を強調
+                document.body.style.color = "#ffffff";
+                const links = document.querySelectorAll('a');
+                links.forEach(a => {
+                    a.style.color = "#000";
+                    a.style.background = "#fff";
+                });
+
+                // 3. メッセージ
+                alert("ボクを見つけてくれてありがとう！ d(^_^o)\n承認欲求、満たされました。");
+                
+                secretCounter = 0;
+            }
+        } else {
+            // 左上以外を触ったらカウントリセット（静寂を守るため）
+            secretCounter = 0;
         }
-    }
-});
+    });
+})();
 </script>
 </html>
