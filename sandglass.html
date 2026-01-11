@@ -109,7 +109,7 @@
             p.draw();
         });
 
-        if (particles.length > 400) particles.shift(); 
+        if (particles.length > 50) particles.shift(); 
 
         document.getElementById('time-val').innerText = particles.length;
         document.getElementById('energy-val').innerText = Math.floor(Math.abs(gx) + Math.abs(gy));
