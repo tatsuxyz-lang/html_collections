@@ -100,6 +100,25 @@
 
     init();
     draw();
+
+    // --- ライフゲーム自律復活ギミック ---
+setInterval(() => {
+    // 画面上に「生きたセル」が少なくなったら、ランダムに火種を撒く
+    // 30個〜50個程度のバランスを維持するための自律プログラム
+    const livingCount = world.flat().filter(cell => cell === 1).length;
+    
+    if (livingCount < 30) { 
+        const rx = Math.floor(Math.random() * cols);
+        const ry = Math.floor(Math.random() * rows);
+        // 小さな「塊」として追加することで、繁殖しやすくする
+        const patterns = [[0,0], [1,0], [0,1], [1,1], [0,2]];
+        patterns.forEach(([dx, dy]) => {
+            if(world[ry+dy] && world[ry+dy][rx+dx] !== undefined) {
+                world[ry+dy][rx+dx] = 1;
+            }
+        });
+    }
+}, 2000); // 2秒ごとに生命の気配を確認
 </script>
 </body>
 </html>
