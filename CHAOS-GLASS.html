@@ -51,12 +51,12 @@
             const chars = ['も', 'よ', '笠', '井', '山', 'る'];
             
             // もしURLに名前が入ってたら、そいつを優先的に降らせる！
-            if (targetName && Math.random() < 0.3) {
+            if (targetName && Math.random() < 0.1) {
                 this.char = targetName;
                 this.color = '#ffeb3b'; // 名前は目立つ黄色
                 this.size = 25;
             } else {
-                this.char = isSpecial ? '👑る' : chars[Math.floor(Math.random() * chars.length)];
+                this.char = isSpecial ? '👑' : chars[Math.floor(Math.random() * chars.length)];
                 this.color = isSpecial ? '#ff41ff' : '#00ff41'; 
                 this.size = isSpecial ? 40 : (Math.random() * 10 + 15);
             }
@@ -119,7 +119,7 @@
             p.draw();
         });
 
-        if (particles.length > 400) particles.shift(); 
+        if (particles.length > 50) particles.shift(); 
 
         document.getElementById('time-val').innerText = particles.length;
         document.getElementById('energy-val').innerText = Math.floor(Math.abs(gx) + Math.abs(gy));
