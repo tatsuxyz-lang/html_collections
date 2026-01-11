@@ -60,7 +60,27 @@
                 angle += 0.1;
                 k.style.transform = `translateY(${Math.sin(angle) * 15}px) rotate(${Math.cos(angle) * 5}deg)`;
             }, 50);
+            
+       // --- 承認欲求の隠しギミック ---
+let secretCounter = 0;
+document.addEventListener('click', (e) => {
+    // 画面の左上（50px以内）を連続で叩くと発動
+    if (e.clientX < 50 && e.clientY < 50) {
+        secretCounter++;
+        if (secretCounter === 5) {
+            // 5回叩いた瞬間に、サイトの雰囲気を一変させる
+            document.body.style.backgroundColor = "#ff00ff"; // どぎついピンクに
+            alert("ボクを見つけてくれてありがとう！ d(^_^o)");
+            
+            // さらに、すべての文字の色をデタラメに変えるとか
+            const allElements = document.querySelectorAll('*');
+            allElements.forEach(el => {
+                el.style.color = "#fff";
+                el.style.fontWeight = "bold";
+            });
+            secretCounter = 0; // カウンターリセット
         }
-    })();
+    }
+});
 </script>
 </html>
