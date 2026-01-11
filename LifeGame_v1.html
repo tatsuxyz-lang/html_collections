@@ -20,7 +20,7 @@
         <div class="status">GEN: <span id="gen">0</span></div>
     </div>
     <canvas id="lifeCanvas"></canvas>
-    <div style="padding: 10px; font-size: 12px;">※画面をクリックすると「餌（生命）」を直接放り込めるわよ。</div>
+    <div style="padding: 10px; font-size: 12px; color: #00ff41; opacity: 0.5;">※画面をクリックすると「餌（生命）」を直接放り込めるわよ。</div>
 
 <script>
     const canvas = document.getElementById('lifeCanvas');
@@ -71,8 +71,9 @@
     }
 
     canvas.addEventListener('mousedown', e => {
-        const x = Math.floor(e.clientX / cellSize);
-        const y = Math.floor((e.clientY - 50) / cellSize);
+        const rect = canvas.getBoundingClientRect();
+        const x = Math.floor((e.clientX - rect.left) / cellSize);
+        const y = Math.floor((e.clientY - rect.top) / cellSize);
         if(grid[x] && grid[x][y] !== undefined) {
             grid[x][y] = 1;
             if(grid[x+1]) grid[x+1][y] = 1;
@@ -95,36 +96,35 @@
     init();
     draw();
 
-    // --- 【修正済】自律復活ギミック ---
     // --- ライフゲーム自律復活：ゆらぎアップデート ---
-setInterval(() => {
-    let livingCount = 0;
-    for(let c=0; c<cols; c++) {
-        for(let r=0; r<rows; r++) {
-            if(grid[c][r] === 1) livingCount++;
-        }
-    }
-    
-    if (livingCount < 40) { 
-        const rx = Math.floor(Math.random() * (cols - 5));
-        const ry = Math.floor(Math.random() * (rows - 5));
-        
-        // 基本のグライダー（右下へ）
-        let glider = [[0,1], [1,2], [2,0], [2,1], [2,2]];
-
-        // 5回に1回（20%）の確率で、形を反転させて逆走させる
-        if (Math.random() < 0.2) {
-            // 逆方向（左下へ）
-            glider = [[2,1], [1,2], [0,0], [0,1], [0,2]];
-        }
-        
-        glider.forEach(([dx, dy]) => {
-            if(grid[rx+dx] && grid[rx+dx][ry+dy] !== undefined) {
-                grid[rx+dx][ry+dy] = 1;
+    setInterval(() => {
+        let livingCount = 0;
+        for(let c=0; c<cols; c++) {
+            for(let r=0; r<rows; r++) {
+                if(grid[c][r] === 1) livingCount++;
             }
-        });
-    }
-}, 3000);
+        }
+        
+        if (livingCount < 40) { 
+            const rx = Math.floor(Math.random() * (cols - 5));
+            const ry = Math.floor(Math.random() * (rows - 5));
+            
+            // 基本のグライダー（右下へ）
+            let glider = [[0,1], [1,2], [2,0], [2,1], [2,2]];
+
+            // 5回に1回（20%）の確率で、形を反転させて逆走させる
+            if (Math.random() < 0.2) {
+                // 逆方向（左下へ）
+                glider = [[2,1], [1,2], [0,0], [0,1], [0,2]];
+            }
+            
+            glider.forEach(([dx, dy]) => {
+                if(grid[rx+dx] && grid[rx+dx][ry+dy] !== undefined) {
+                    grid[rx+dx][ry+dy] = 1;
+                }
+            });
+        }
+    }, 3000);
 </script>
 </body>
 </html>
