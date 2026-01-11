@@ -73,7 +73,7 @@ function perform(action) {
         if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; }
         document.querySelectorAll('.chara, .essay-mode, div[style*="border-bottom"]').forEach(el => el.remove());
         log.innerHTML = "RESET. お後がよろしいようで。 d(^_^o)";
-        speak("リセットしたよ。");
+        speak("リセット。");
         return;
     }
     // shinuachi.html のどこかにこっそり追加
@@ -86,9 +86,9 @@ if (new Date().getDate() === 11) { // 11日だけ出現
 
     if (action === 'shift-a') {
         log.innerHTML = "上の句、抜刀！";
-        playAudio('ue_no_ku.mp3');
+        playAudio('ue_no_ku.m4a');
     } else if (action === 'a') {
-        speak("（下の句）三角形のお札が舞い散る、冬の空。");
+        speak("（三角形の、お札が舞い散る、冬の空。");
     } else if (action === 's') {
         playAudio('koe.mp3');
     } else if (action === 'p') {
@@ -100,7 +100,7 @@ if (new Date().getDate() === 11) { // 11日だけ出現
         img.style.width = '200px';
         document.body.appendChild(img);
         setTimeout(() => img.remove(), 3000);
-        speak("あら、ゴミを宝に変える知恵がついたみたいね。");
+        speak("あら、ゴミを宝に変える知恵ね。");
     } else if (action === 't') {
         dropTriangleMoney();
     } else if (action === 'e') {
@@ -133,7 +133,7 @@ function showEssay() {
     el.innerHTML = "※個人の感想です<br>d(^_^o)";
     document.body.appendChild(el);
     setTimeout(() => el.remove(), 2000);
-    speak("これ、ただの僕の感想だからｗ");
+    speak("ただの僕の感想");
 }
 </script>
 </body>
