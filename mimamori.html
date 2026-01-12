@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>鬼ごっこ索敵レーダー</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding-top: 50px; transition: 0.5s; }
+        .safe { background-color: #e0f7fa; }   /* 索敵中 */
+        .danger { background-color: #ffcdd2; } /* ロスト（圏外） */
+        button { padding: 20px 40px; font-size: 1.5rem; cursor: pointer; border-radius: 10px; }
+        #status { font-size: 2rem; margin-top: 30px; font-weight: bold; }
+        #rssi-val { font-size: 5rem; color: #00796b; } /* 電波強度をデカく表示 */
+    </style>
+</head>
+<body class="safe">
+
+    <h1>鬼ごっこ索敵レーダー</h1>
+    <p>「あなたは20歳以上ですか？」<br>はい、自己責任で遊びます。</p>
+    
+    <button onclick="startMonitoring()">索敵開始（ターゲットを選択）</button>
+    
+    <div id="status">ターゲット未捕捉</div>
+    <div id="rssi-val">--</div>
+
+    <script>
+        let device = null;
+        let monitorInterval = null; // 繰り返し実行するためのタイマー
+
+        async function startMonitoring() {
+            try {
+                // 1. デバイスを探す
+                device = await navigator.bluetooth.requestDevice({ acceptAllDevices: true });
+                
+                // 2. 切断時の処理を予約
+                device.addEventListener('gattserverdisconnected', onDisconnected);
+
+                // 3. 接続
+                const server = await device.gatt.connect();
+                
+                document.getElementById('status').innerText = "ターゲット捕捉：" + device.name;
+                document.body.className = "safe";
+
+                // ★索敵ループ開始（1秒ごとに電波強度を測る）
+                monitorInterval = setInterval(async () => {
+                    if (device.gatt.connected) {
+                        const rssi = await device.gatt.readRSSI(); 
+                        document.getElementById('rssi-val').innerText = rssi;
+                        
+                        // 数値が -40 より大きければ（0に近いほど近い）「近いぞ！」と表示
+                        if (rssi > -50) {
+                            document.getElementById('status').innerText = "至近距離に敵影あり！";
+                        } else {
+                            document.getElementById('status').innerText = "追跡中...";
+                        }
+                    }
+                }, 1000);
+
+            } catch (error) {
+                console.log("エラー: " + error);
+            }
+        }
+
+        function onDisconnected() {
+            // タイマーを止める
+            clearInterval(monitorInterval);
+            
+            document.getElementById('status').innerText = "⚠️ ターゲットを見失いました！";
+            document.getElementById('rssi-val').innerText = "LOST";
+            document.body.className = "danger";
+            
+            const uttr = new SpeechSynthesisUtterance("見失いました。");
+            speechSynthesis.speak(uttr);
+        }
+    </script>
+</body>
+</html>
