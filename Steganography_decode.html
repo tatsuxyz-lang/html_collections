@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>ステガノ・デコーダー</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #1a1a1a; color: #0f0; padding: 20px; }
+        canvas { border: 2px solid #fff; image-rendering: pixelated; width: 256px; height: 256px; background: #000; }
+        textarea { width: 95%; height: 100px; background: #222; color: #0f0; border: 1px solid #0f0; font-family: monospace; }
+        .result-box { background: #002200; border: 2px dashed #0f0; padding: 20px; margin-top: 20px; font-size: 1.5rem; }
+        button { padding: 15px 30px; font-size: 1.2rem; margin: 10px; cursor: pointer; background: #0f0; color: #000; border: none; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>STEGANO DECODER</h1>
+    
+    <p>パケット（STG64:...）を貼り付けてください</p>
+    <textarea id="inputText" placeholder="STG64:5a3f..."></textarea><br>
+    
+    <button onclick="decodeStegano()">秘密を抽出する</button>
+    
+    <div>
+        <canvas id="outputCanvas" width="64" height="64"></canvas>
+    </div>
+
+    <div class="result-box">
+        SECRET MESSAGE: <span id="decodedMsg">???</span>
+    </div>
+
+    <script>
+        function decodeStegano() {
+            const text = document.getElementById('inputText').value.trim();
+            const canvas = document.getElementById('outputCanvas');
+            const ctx = canvas.getContext('2d');
+            const msgSpan = document.getElementById('decodedMsg');
+
+            if (!text.startsWith("STG64:")) return alert("形式が違います");
+
+            const hex = text.replace("STG64:", "");
+            const imageData = ctx.createImageData(64, 64);
+            let binMsg = "";
+
+            for (let i = 0; i < hex.length; i++) {
+                const val4bit = parseInt(hex[i], 16);
+                
+                // 1ビット目（偶数か奇数か）を抽出
+                binMsg += (val4bit % 2 === 0) ? "0" : "1";
+
+                // 描画用の色付け（デコーダー側で16色のグレースケールに戻す）
+                const color = val4bit * 16;
+                const idx = i * 4;
+                imageData.data[idx] = imageData.data[idx+1] = imageData.data[idx+2] = color;
+                imageData.data[idx+3] = 255;
+            }
+            ctx.putImageData(imageData, 0, 0);
+
+            // 2進数を文字に戻す
+            let result = "";
+            for (let i = 0; i < binMsg.length; i += 8) {
+                const byte = binMsg.substr(i, 8);
+                if (byte === "11111111" || byte.length < 8) break; // 終了信号
+                result += String.fromCharCode(parseInt(byte, 2));
+            }
+            msgSpan.innerText = result || "（メッセージなし）";
+        }
+    </script>
+</body>
+</html>
