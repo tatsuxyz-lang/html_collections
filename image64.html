@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>64x64・極限劣化エンコーダー</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #1a1a1a; color: #eee; padding: 20px; }
+        #preview { border: 2px solid #fff; image-rendering: pixelated; width: 320px; height: 320px; background: #000; }
+        textarea { width: 95%; height: 120px; font-family: monospace; background: #333; color: #0f0; border: 1px solid #555; word-break: break-all; }
+        .box { background: #2a2a2a; padding: 20px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #444; }
+        h1 { color: #0f0; }
+    </style>
+</head>
+<body>
+    <h1>64×64 B&W ENCODER</h1>
+    
+    <div class="box">
+        <p>1. 画像を選択（64x64白黒に劣化）</p>
+        <input type="file" id="imageInput" accept="image/*">
+    </div>
+
+    <div class="box">
+        <p>2. プレビュー（細目で見てください）</p>
+        <canvas id="preview" width="64" height="64"></canvas>
+    </div>
+
+    <div class="box">
+        <p>3. QRコード用・16進数データ</p>
+        <textarea id="outputString" readonly></textarea>
+        <p><small>この文字列をQRメーカーに「テキスト」として入力！</small></p>
+    </div>
+
+    <script>
+        const input = document.getElementById('imageInput');
+        const canvas = document.getElementById('preview');
+        const ctx = canvas.getContext('2d');
+        const output = document.getElementById('outputString');
+
+        input.onchange = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                // 64x64で描画
+                ctx.fillStyle = "black";
+                ctx.fillRect(0,0,64,64);
+                ctx.drawImage(img, 0, 0, 64, 64);
+                
+                const imageData = ctx.getImageData(0, 0, 64, 64);
+                let binaryStr = "";
+                for (let i = 0; i < imageData.data.length; i += 4) {
+                    // 輝度計算
+                    const avg = (imageData.data[i] + imageData.data[i+1] + imageData.data[i+2]) / 3;
+                    const val = (avg > 128) ? 1 : 0;
+                    binaryStr += val;
+
+                    // プレビュー表示も白黒に強制
+                    const color = val * 255;
+                    imageData.data[i] = imageData.data[i+1] = imageData.data[i+2] = color;
+                }
+                ctx.putImageData(imageData, 0, 0);
+
+                // 2進数→16進数圧縮（4bitずつ）
+                let hexStr = "";
+                for (let i = 0; i < binaryStr.length; i += 4) {
+                    hexStr += parseInt(binaryStr.substr(i, 4), 2).toString(16);
+                }
+                output.value = "IMG64:" + hexStr;
+            };
+            img.src = URL.createObjectURL(e.target.files[0]);
+        };
+    </script>
+</body>
+</html>
