@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>極限劣化デコーダー（復元機）</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #1a1a1a; color: #0f0; padding: 20px; }
+        textarea { width: 95%; height: 100px; background: #222; color: #0f0; border: 1px solid #0f0; font-family: monospace; }
+        canvas { border: 2px solid #fff; image-rendering: pixelated; width: 320px; height: 320px; margin-top: 20px; background: #000; }
+        button { padding: 15px 30px; font-size: 1.2rem; margin: 10px; cursor: pointer; background: #0f0; color: #000; border: none; font-weight: bold; }
+        .info { color: #888; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <h1>EXTREME DECODER</h1>
+    
+    <p>QRコードから読み取った文字列を貼り付けてください</p>
+    <textarea id="inputText" placeholder="IMG64:0f3a... など"></textarea><br>
+    
+    <button onclick="decode()">復元（DECODE）</button>
+    
+    <div>
+        <canvas id="outputCanvas"></canvas>
+    </div>
+    <p id="status" class="info">待機中...</p>
+
+    <script>
+        function decode() {
+            const text = document.getElementById('inputText').value.trim();
+            const canvas = document.getElementById('outputCanvas');
+            const ctx = canvas.getContext('2d');
+            const status = document.getElementById('status');
+
+            if (!text.startsWith("IMG64:")) {
+                alert("対応していない形式です（IMG64から始まるデータを入れてください）");
+                return;
+            }
+
+            const hex = text.replace("IMG64:", "");
+            const size = 64;
+            canvas.width = size;
+            canvas.height = size;
+
+            // 16進数を2進数に戻す
+            let binaryStr = "";
+            for (let i = 0; i < hex.length; i++) {
+                binaryStr += parseInt(hex[i], 16).toString(2).padStart(4, '0');
+            }
+
+            const imageData = ctx.createImageData(size, size);
+            for (let i = 0; i < binaryStr.length && i < size * size; i++) {
+                const val = binaryStr[i] === "1" ? 255 : 0;
+                const idx = i * 4;
+                imageData.data[idx] = val;     // R
+                imageData.data[idx + 1] = val; // G
+                imageData.data[idx + 2] = val; // B
+                imageData.data[idx + 3] = 255; // A
+            }
+            
+            ctx.putImageData(imageData, 0, 0);
+            status.innerText = "復元完了: 64x64 B&W";
+        }
+    </script>
+</body>
+</html>
