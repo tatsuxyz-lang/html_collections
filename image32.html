@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>極限劣化エンコーダー</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #eee; padding: 20px; }
+        #preview { border: 1px solid #000; image-rendering: pixelated; width: 256px; height: 256px; background: white; }
+        textarea { width: 90%; height: 80px; font-family: monospace; }
+        .box { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <h1>極限劣化エンコーダー</h1>
+    
+    <div class="box">
+        <p>1. 画像を選択（32x32に強制劣化させます）</p>
+        <input type="file" id="imageInput" accept="image/*">
+    </div>
+
+    <div class="box">
+        <p>2. 劣化プレビュー（この情報だけを送る）</p>
+        <canvas id="preview" width="32" height="32"></canvas>
+    </div>
+
+    <div class="box">
+        <p>3. QRコード用・圧縮文字列</p>
+        <textarea id="outputString" readonly></textarea>
+        <p><small>※この文字列を市販のQRメーカーに貼り付けてください。</small></p>
+    </div>
+
+    <script>
+        const input = document.getElementById('imageInput');
+        const canvas = document.getElementById('preview');
+        const ctx = canvas.getContext('2d');
+        const output = document.getElementById('outputString');
+
+        input.onchange = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                // 32x32に縮小して描画
+                ctx.fillStyle = "white";
+                ctx.fillRect(0,0,32,32);
+                ctx.drawImage(img, 0, 0, 32, 32);
+                
+                // 白黒2値化して文字列に変換
+                const imageData = ctx.getImageData(0, 0, 32, 32);
+                let binaryStr = "";
+                for (let i = 0; i < imageData.data.length; i += 4) {
+                    const avg = (imageData.data[i] + imageData.data[i+1] + imageData.data[i+2]) / 3;
+                    binaryStr += (avg > 128) ? "1" : "0"; // 輝度で0か1にする
+                }
+
+                // 2進数を16進数にまとめて短くする（圧縮）
+                let hexStr = "";
+                for (let i = 0; i < binaryStr.length; i += 4) {
+                    hexStr += parseInt(binaryStr.substr(i, 4), 2).toString(16);
+                }
+                output.value = "IMG32:" + hexStr; // 識別子をつけて出力
+            };
+            img.src = URL.createObjectURL(e.target.files[0]);
+        };
+    </script>
+</body>
+</html>
