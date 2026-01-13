@@ -23,6 +23,30 @@
             transition: background-color 2s ease; /* ヤニ色への変化を滑らかに */
         }
 
+        /* 42回達成時の巨大リンク用スタイル */
+.answer-link {
+    display: none; /* 通常は隠しておく */
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 8em; /* 巨大サイズ */
+    color: #ff0000;
+    text-shadow: 0 0 20px #ff0000, 0 0 40px #ff0000;
+    z-index: 100;
+    text-decoration: none;
+    font-weight: bold;
+    animation: pulse 1s infinite alternate;
+    background: rgba(0, 0, 0, 0.9);
+    padding: 20px 50px;
+    border: 10px double #ff0000;
+}
+
+@keyframes pulse {
+    from { opacity: 0.6; transform: translate(-50%, -50%) scale(1); }
+    to { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+}
+
         .cigarette-area {
             position: relative;
             width: 320px;
@@ -114,6 +138,8 @@
 
     <a href="index.html" class="hub-link">[ RETURN TO HUB ]</a>
 
+    <a id="answer42" href="https://ja.wikipedia.org/wiki/42" target="_blank" class="answer-link">42</a>
+
     <audio id="lighterSound" src="https://assets.mixkit.co/sfx/preview/mixkit-small-lighter-click-2342.mp3" preload="auto"></audio>
     <audio id="puffSound" src="https://assets.mixkit.co/sfx/preview/mixkit-puff-of-smoke-1160.mp3" preload="auto"></audio>
 
@@ -176,6 +202,32 @@
                 smokeContainer.appendChild(p);
                 p.addEventListener('animationend', () => p.remove());
             }
+
+            // updateStains() 関数の中か、クリックイベントの最後に追加してください
+function checkTheAnswer() {
+    const answerLink = document.getElementById('answer42');
+    if (count >= 42) {
+        answerLink.style.display = 'block';
+        // メッセージも少し不穏に変更
+        const statusMessage = document.getElementById('statusMessage');
+        if(statusMessage) {
+            statusMessage.textContent = ">> You found the answer to the Ultimate Question.";
+            statusMessage.style.color = "#ff0000";
+        }
+    } else {
+        answerLink.style.display = 'none';
+    }
+}
+
+// クリックイベントのリスナー内でこの関数を呼び出す
+area.addEventListener('click', () => {
+    // ...既存の処理（count++ など）...
+    
+    checkTheAnswer(); // カウントチェックを追加
+});
+
+// ページ読み込み時にも一度チェック（保存されたカウントが42以上の場合のため）
+window.onload = checkTheAnswer;
 
             // クールダウン
             area.dataset.cooling = 'true';
