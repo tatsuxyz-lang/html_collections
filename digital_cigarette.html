@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Garam - Survival Mode</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
+        body {
+            /* ヤニ汚れを表現するため、背景をJSで制御。初期値はターミナル黒 */
+            background-color: #1a1a1a; 
+            color: #00ff00;
+            font-family: 'VT323', monospace;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden; 
+            position: relative;
+            transition: background-color 2s ease; /* ヤニ色への変化を滑らかに */
+        }
+
+        .cigarette-area {
+            position: relative;
+            width: 320px;
+            height: 120px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            border: 3px dashed #008800;
+            padding: 20px;
+            box-sizing: border-box;
+            text-align: center;
+            flex-direction: column;
+            user-select: none;
+            z-index: 10;
+            background: rgba(0,0,0,0.5);
+        }
+
+        /* 禁断症状：震えのアニメーション */
+        @keyframes withdrawal-shakes {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -2px) rotate(-1deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            30% { transform: translate(3px, 2px) rotate(0deg); }
+            40% { transform: translate(1px, -1px) rotate(1deg); }
+            50% { transform: translate(-1px, 2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            70% { transform: translate(3px, 1px) rotate(-1deg); }
+            80% { transform: translate(-1px, -1px) rotate(1deg); }
+            90% { transform: translate(1px, 2px) rotate(0deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); }
+        }
+
+        .shaking {
+            animation: withdrawal-shakes 0.1s infinite;
+            border-color: #ff0000 !important;
+            color: #ff0000 !important;
+        }
+
+        .smoke-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            overflow: visible; /* 煙を画面全体に解放 */
+        }
+
+        .smoke-particle {
+            position: absolute;
+            color: rgba(255, 255, 255, 0.4);
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            animation: riseAndFade 4s ease-out forwards;
+        }
+
+        @keyframes riseAndFade {
+            0% {
+                transform: translate(0, 0) scale(1) rotate(0deg);
+                opacity: 0.8;
+                filter: blur(0px);
+            }
+            100% {
+                /* 煙の動きをよりダイナミックに */
+                transform: translate(calc(var(--rand-x) * 3px), -600px) scale(var(--rand-scale)) rotate(360deg);
+                opacity: 0;
+                filter: blur(10px);
+            }
+        }
+
+        /* UI要素 */
+        .counter { position: absolute; top: 20px; right: 20px; font-size: 1.5em; }
+        .reload-button { position: absolute; top: 20px; left: 20px; color: #ff00ff; text-decoration: none; border: 1px solid #ff00ff; padding: 5px 10px; }
+        .hub-link { position: absolute; bottom: 30px; color: #00ffff; text-decoration: none; border: 1px solid #00ffff; padding: 10px 20px; }
+
+    </style>
+</head>
+<body>
+    <div class="counter">Nicotine Level: <span id="smokeCount">0</span></div>
+    <a href="#" class="reload-button" onclick="resetStains(); return false;">[ SCRUB WALLS (Reset) ]</a>
+
+    <div id="cigaretteArea" class="cigarette-area">
+        <span id="mainText">CLICK TO SURVIVE</span>
+        <div id="statusMessage" style="margin-top:10px; font-size:0.8em;"></div>
+    </div>
+    
+    <div class="smoke-container" id="smokeContainer"></div>
+
+    <a href="https://github.com/tatsuxyz-lang/LifeGame_v1.html" class="hub-link">[ RETURN TO HUB ]</a>
+
+    <audio id="lighterSound" src="https://assets.mixkit.co/sfx/preview/mixkit-small-lighter-click-2342.mp3" preload="auto"></audio>
+    <audio id="puffSound" src="https://assets.mixkit.co/sfx/preview/mixkit-puff-of-smoke-1160.mp3" preload="auto"></audio>
+
+    <script>
+        const area = document.getElementById('cigaretteArea');
+        const smokeContainer = document.getElementById('smokeContainer');
+        const countSpan = document.getElementById('smokeCount');
+        const mainText = document.getElementById('mainText');
+        const lighter = document.getElementById('lighterSound');
+        const puff = document.getElementById('puffSound');
+        
+        let count = parseInt(localStorage.getItem('digitalSmokeCount')) || 0;
+        let lastClickTime = Date.now();
+        countSpan.textContent = count;
+        updateStains();
+
+        // 禁断症状のチェック（10秒吸わないと震えだす）
+        setInterval(() => {
+            const idleTime = Date.now() - lastClickTime;
+            if (idleTime > 10000) {
+                area.classList.add('shaking');
+                mainText.textContent = "NEED... NICOTINE...";
+            }
+        }, 1000);
+
+        area.addEventListener('click', () => {
+            if (area.dataset.cooling === 'true') return;
+
+            // 状態リセット
+            lastClickTime = Date.now();
+            area.classList.remove('shaking');
+            mainText.textContent = "CLICK TO SURVIVE";
+            
+            // 音の再生
+            lighter.currentTime = 0;
+            lighter.play().catch(() => {});
+            setTimeout(() => { puff.currentTime = 0; puff.play().catch(() => {}); }, 200);
+
+            // カウントとヤニ汚れ更新
+            count++;
+            countSpan.textContent = count;
+            localStorage.setItem('digitalSmokeCount', count);
+            updateStains();
+
+            // 巨大化した「0/1」の煙
+            for (let i = 0; i < 25; i++) {
+                const p = document.createElement('div');
+                p.classList.add('smoke-particle');
+                p.textContent = Math.random() < 0.5 ? '0' : '1';
+                
+                // 煙のサイズを3倍（30px〜90px）に強化
+                const size = Math.random() * 60 + 30; 
+                p.style.fontSize = `${size}px`;
+                p.style.left = `calc(50% + ${Math.random() * 100 - 50}px)`;
+                p.style.top = `calc(50% + ${Math.random() * 40 - 20}px)`;
+                
+                p.style.setProperty('--rand-x', Math.random() * 200 - 100);
+                p.style.setProperty('--rand-scale', Math.random() * 2 + 1);
+
+                smokeContainer.appendChild(p);
+                p.addEventListener('animationend', () => p.remove());
+            }
+
+            // クールダウン
+            area.dataset.cooling = 'true';
+            area.style.opacity = "0.5";
+            setTimeout(() => {
+                area.dataset.cooling = 'false';
+                area.style.opacity = "1";
+            }, 2000);
+        });
+
+        function updateStains() {
+            // 吸えば吸うほど背景がヤニ色（茶色）に染まる
+            const darkness = Math.min(count * 2, 100); // 最大100
+            const r = 26 + (count * 0.5); 
+            const g = 26 + (count * 0.2);
+            const b = 26 - (count * 0.2);
+            document.body.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
+        }
+
+        function resetStains() {
+            count = 0;
+            localStorage.setItem('digitalSmokeCount', 0);
+            countSpan.textContent = 0;
+            updateStains();
+            location.reload();
+        }
+    </script>
+</body>
+</html>
