@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2項目・万能計算機</title>
+    <style>
+        body { font-family: sans-serif; padding: 15px; background: #f0f4f8; }
+        .container { max-width: 500px; margin: auto; }
+        .calc-card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .header { display: flex; justify-content: space-between; margin-bottom: 10px; }
+        .header input { border: none; font-weight: bold; color: #555; width: 60%; font-size: 1rem; }
+        .row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+        .row label { width: 50px; font-size: 0.8rem; color: #888; }
+        input[type="number"] { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1.1rem; }
+        .result { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #eee; display: flex; justify-content: space-between; align-items: center; }
+        .res-value { font-size: 1.3rem; font-weight: bold; color: #007bff; }
+        .add-btn { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; }
+        .del-btn { background: none; border: none; color: #ff4d4f; cursor: pointer; font-size: 0.8rem; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="calcList"></div>
+    <button class="add-btn" onclick="addCalc()">＋ 新しい計算を追加</button>
+</div>
+
+<script>
+    const calcList = document.getElementById('calcList');
+
+    function save() {
+        const data = Array.from(document.querySelectorAll('.calc-card')).map(card => ({
+            title: card.querySelector('.title-in').value,
+            a: card.querySelector('.a-in').value,
+            b: card.querySelector('.b-in').value
+        }));
+        localStorage.setItem('universalCalc', JSON.stringify(data));
+    }
+
+    function calculate(card) {
+        const a = parseFloat(card.querySelector('.a-in').value) || 0;
+        const b = parseFloat(card.querySelector('.b-in').value) || 0;
+        const resSpan = card.querySelector('.res-value');
+        if (b !== 0) {
+            const res = a / b;
+            // 小数点第3位まで表示（適宜調整）
+            resSpan.innerText = Number.isInteger(res) ? res : res.toFixed(3);
+        } else {
+            resSpan.innerText = "0";
+        }
+        save();
+    }
+
+    function createCalc(title="タイトル", a="", b="") {
+        const div = document.createElement('div');
+        div.className = 'calc-card';
+        div.innerHTML = `
+            <div class="header">
+                <input type="text" class="title-in" value="${title}" oninput="save()">
+                <button class="del-btn" onclick="this.parentElement.parentElement.remove();save()">削除</button>
+            </div>
+            <div class="row">
+                <label>数値A</label><input type="number" class="a-in" value="${a}" placeholder="100" oninput="calculate(this.parentElement.parentElement)">
+            </div>
+            <div class="row">
+                <label>数値B</label><input type="number" class="b-in" value="${b}" placeholder="3" oninput="calculate(this.parentElement.parentElement)">
+            </div>
+            <div class="result">
+                <span>結果 (A÷B):</span>
+                <span class="res-value">0</span>
+            </div>
+        `;
+        calcList.appendChild(div);
+        calculate(div);
+    }
+
+    function addCalc() { createCalc(); }
+
+    window.onload = () => {
+        const saved = JSON.parse(localStorage.getItem('universalCalc') || '[]');
+        if (saved.length > 0) {
+            saved.forEach(d => createCalc(d.title, d.a, d.b));
+        } else {
+            createCalc("単価計算(円÷個数)", "", "");
+            createCalc("確率計算(当り÷試行)", "", "");
+        }
+      <div>
+      <a href="index.html" class="hub-link">[ RETURN TO HUB ]</a>
+      </div>
+    };
+</script>
+
+</body>
+</html>
