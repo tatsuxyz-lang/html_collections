@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>項目追加メモ帳</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #f4f7f6; display: flex; justify-content: center; }
+        .container { width: 100%; max-width: 500px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #333; margin-bottom: 20px; }
+        .item-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .bullet { color: #007bff; font-weight: bold; }
+        input[type="text"] { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 16px; }
+        .btn { border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold; transition: 0.2s; }
+        .copy-btn { background: #e7f1ff; color: #007bff; }
+        .copy-btn:hover { background: #007bff; color: white; }
+        .del-btn { background: #fff1f0; color: #ff4d4f; }
+        .del-btn:hover { background: #ff4d4f; color: white; }
+        .add-btn { width: 100%; background: #28a745; color: white; padding: 12px; margin-top: 10px; font-size: 16px; }
+        .add-btn:hover { background: #218838; }
+        .status-msg { text-align: center; color: green; font-size: 0.8rem; height: 1.5rem; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>📝 項目別メモ帳</h2>
+    <div id="memoList"></div>
+    <button class="btn add-btn" onclick="addItem()">＋ 項目を追加</button>
+    <div id="status" class="status-msg"></div>
+</div>
+  <div>
+  <a href="index.html" class="hub-link">[ RETURN TO HUB ]</a>
+</div>
+    
+<script>
+    const memoList = document.getElementById('memoList');
+    const status = document.getElementById('status');
+
+    // 1. 保存用関数
+    function saveAll() {
+        const inputs = document.querySelectorAll('input[type="text"]');
+        const data = Array.from(inputs).map(input => input.value);
+        localStorage.setItem('bulletListMemo', JSON.stringify(data));
+    }
+
+    // 2. 項目を作成する関数
+    function createItemElement(value = "") {
+        const div = document.createElement('div');
+        div.className = 'item-row';
+        div.innerHTML = `
+            <span class="bullet">・</span>
+            <input type="text" value="${value}" placeholder="メモを入力..." oninput="saveAll()">
+            <button class="btn copy-btn" onclick="copyItem(this)">コピー</button>
+            <button class="btn del-btn" onclick="removeItem(this)">削除</button>
+        `;
+        return div;
+    }
+
+    // 3. 起動時に読み込み
+    window.onload = () => {
+        const savedData = JSON.parse(localStorage.getItem('bulletListMemo') || '[]');
+        if (savedData.length > 0) {
+            savedData.forEach(text => memoList.appendChild(createItemElement(text)));
+        } else {
+            addItem(); // 初回のみ空の入力欄を表示
+        }
+    };
+
+    // 4. 追加ボタン
+    function addItem() {
+        const newItem = createItemElement();
+        memoList.appendChild(newItem);
+        newItem.querySelector('input').focus();
+        saveAll();
+    }
+
+    // 5. 削除ボタン
+    function removeItem(btn) {
+        btn.parentElement.remove();
+        saveAll();
+    }
+
+    // 6. 個別コピー機能
+    function copyItem(btn) {
+        const val = btn.parentElement.querySelector('input').value;
+        if (!val) return;
+        
+        navigator.clipboard.writeText(`・ ${val}`).then(() => {
+            status.innerText = `「・ ${val}」をコピーしました`;
+            setTimeout(() => status.innerText = "", 2000);
+        });
+    }
+</script>
+
+</body>
+</html>
