@@ -9,14 +9,19 @@
         .container { max-width: 500px; margin: auto; }
         .calc-card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
         .header { display: flex; justify-content: space-between; margin-bottom: 10px; }
-        .header input { border: none; font-weight: bold; color: #555; width: 60%; font-size: 1rem; }
+        .header input { border: none; font-weight: bold; color: #555; width: 60%; font-size: 1rem; background: transparent; }
         .row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
         .row label { width: 50px; font-size: 0.8rem; color: #888; }
         input[type="number"] { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1.1rem; }
         .result { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #eee; display: flex; justify-content: space-between; align-items: center; }
         .res-value { font-size: 1.3rem; font-weight: bold; color: #007bff; }
-        .add-btn { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; }
+        .add-btn { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; margin-bottom: 20px; }
         .del-btn { background: none; border: none; color: #ff4d4f; cursor: pointer; font-size: 0.8rem; }
+        
+        /* 戻るボタンのスタイル */
+        .hub-container { text-align: center; margin-top: 30px; margin-bottom: 50px; }
+        .hub-link { color: #888; text-decoration: none; font-size: 0.9rem; padding: 10px 20px; border: 1px solid #ccc; border-radius: 20px; transition: 0.3s; }
+        .hub-link:hover { background: #eee; }
     </style>
 </head>
 <body>
@@ -24,6 +29,11 @@
 <div class="container">
     <div id="calcList"></div>
     <button class="add-btn" onclick="addCalc()">＋ 新しい計算を追加</button>
+
+    <!-- ハブに戻るリンクはここに配置 -->
+    <div class="hub-container">
+        <a href="index.html" class="hub-link">[ RETURN TO HUB ]</a>
+    </div>
 </div>
 
 <script>
@@ -44,7 +54,6 @@
         const resSpan = card.querySelector('.res-value');
         if (b !== 0) {
             const res = a / b;
-            // 小数点第3位まで表示（適宜調整）
             resSpan.innerText = Number.isInteger(res) ? res : res.toFixed(3);
         } else {
             resSpan.innerText = "0";
@@ -85,11 +94,8 @@
             createCalc("単価計算(円÷個数)", "", "");
             createCalc("確率計算(当り÷試行)", "", "");
         }
-     
     };
 </script>
- <div>
-      <a href="index.html" class="hub-link">[ RETURN TO HUB ]</a>
-      </div>
+
 </body>
 </html>
