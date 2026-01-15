@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMART QR COMMANDER - d(^_^o)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        :root { --neon: #00ff41; --bg: #050505; --panel: rgba(0, 255, 65, 0.1); }
+        body { background: var(--bg); color: var(--neon); font-family: 'Courier New', monospace; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 20px; box-sizing: border-box; }
+        h1 { font-size: 1.2rem; text-shadow: 0 0 10px var(--neon); letter-spacing: 4px; margin-bottom: 20px; }
+        .container { width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 20px; }
+        .section { background: var(--panel); border: 1px solid var(--neon); padding: 15px; border-radius: 5px; text-align: center; }
+        textarea { width: 100%; background: #000; border: 1px solid var(--neon); color: var(--neon); padding: 10px; box-sizing: border-box; font-family: inherit; margin-bottom: 10px; font-size: 0.9rem; }
+        .btn { background: var(--panel); border: 1px solid var(--neon); color: var(--neon); padding: 12px; cursor: pointer; text-align: center; text-decoration: none; display: block; margin-top: 10px; width: 100%; box-sizing: border-box; font-size: 0.9rem; transition: 0.3s; }
+        .btn:active { background: var(--neon); color: var(--bg); }
+        #qrcode-res { background: #fff; padding: 10px; display: inline-block; margin: 15px auto; border-radius: 5px; min-width: 160px; min-height: 160px; }
+        .status { font-size: 0.7rem; opacity: 0.7; margin-top: 5px; text-align: left; }
+        .back-hub { margin-top: 40px; background: var(--neon); color: var(--bg); font-weight: bold; font-size: 1.1rem; padding: 20px; border-radius: 10px; text-align: center; width: 100%; text-decoration: none; display: block; }
+    </style>
+</head>
+<body>
+
+    <h1>QR:SMART_COMMANDER</h1>
+
+    <div class="container">
+        <div class="section">
+            <p style="font-size: 0.8rem; text-align: left;">[ INPUT DATA ]</p>
+            <textarea id="qr-input" rows="6" placeholder="メモやコードをここにペースト..."></textarea>
+            
+            <div id="qrcode-res"></div>
+            
+            <p id="mode-info" class="status">MODE: READY</p>
+            
+            <button class="btn" id="generate-btn">生成 & クラウド保存</button>
+            <button class="btn" onclick="downloadQR()">画像を保存 (FOR PRINT)</button>
+        </div>
+
+        <a href="index.html" class="back-hub">≪ BACK TO HUB</a>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // Firebase設定
+        const firebaseConfig = {
+            apiKey: "AIzaSyBeqhRhaRon3dzZjvdH3VKMv4l5OIIRYmY",
+            authDomain: "html-toolbox009.firebaseapp.com",
+            projectId: "html-toolbox009",
+            storageBucket: "html-toolbox009.firebasestorage.app",
+            messagingSenderId: "371696903527",
+            appId: "1:371696903527:web:3f5b191eb8c0f10f52fbc2"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // QR生成の準備
+        const qrDisplay = document.getElementById("qrcode-res");
+        const qrcode = new QRCode(qrDisplay, {
+            width: 160,
+            height: 160,
+            correctLevel: QRCode.CorrectLevel.M
+        });
+
+        // ボタンイベント
+        document.getElementById("generate-btn").addEventListener("click", async () => {
+            const text = document.getElementById("qr-input").value;
+            const modeInfo = document.getElementById("mode-info");
+            
+            if (!text) return alert("データを入力してください");
+
+            // 文字数でモード判定（ボトルネック福祉システム）
+            if (text.length < 50) {
+                // 短い：そのままQR
+                qrcode.makeCode(text);
+                modeInfo.innerText = "MODE: LOCAL (TEXT DATA)";
+            } else {
+                // 長い：Firebaseに飛ばす
+                modeInfo.innerText = "MODE: CLOUD (UPLOADING...)";
+                try {
+                    const docRef = await addDoc(collection(db, "memos"), {
+                        content: text,
+                        createdAt: new Date()
+                    });
+                    // 保存先のURLをQRにする（このページ自体が閲覧用ページになるイメージ）
+                    const shareUrl = window.location.origin + "/view.html?id=" + docRef.id;
+                    qrcode.makeCode(shareUrl);
+                    modeInfo.innerText = "MODE: CLOUD (URL GENERATED)";
+                } catch (e) {
+                    console.error("Error: ", e);
+                    alert("保存に失敗しました。Firestoreのルールを確認してください。");
+                }
+            }
+        });
+
+        // ダウンロード機能はグローバルに置く
+        window.downloadQR = function() {
+            const img = qrDisplay.querySelector("img");
+            if (!img) return alert("先にQRを生成してください");
+            const link = document.createElement("a");
+            link.download = "print_qr.png";
+            link.href = img.src;
+            link.click();
+        };
+    </script>
+</body>
+</html>
