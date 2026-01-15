@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR COMMANDER - d(^_^o)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        :root { --neon: #00ff41; --bg: #050505; --panel: rgba(0, 255, 65, 0.1); }
+        body { background: var(--bg); color: var(--neon); font-family: 'Courier New', monospace; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 20px; box-sizing: border-box; }
+        
+        h1 { font-size: 1.2rem; text-shadow: 0 0 10px var(--neon); letter-spacing: 4px; margin-bottom: 20px; }
+        
+        .container { width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 20px; }
+        
+        /* 入力セクション */
+        .section { background: var(--panel); border: 1px solid var(--neon); padding: 15px; border-radius: 5px; }
+        textarea { width: 100%; background: transparent; border: 1px solid var(--neon); color: var(--neon); padding: 10px; box-sizing: border-box; font-family: inherit; margin-bottom: 10px; }
+        
+        /* ボタン群 */
+        .btn { background: var(--panel); border: 1px solid var(--neon); color: var(--neon); padding: 12px; cursor: pointer; text-align: center; text-decoration: none; display: block; margin-top: 5px; transition: 0.3s; }
+        .btn:active { background: var(--neon); color: var(--bg); }
+        
+        /* QR表示エリア */
+        #qrcode-res { background: #fff; padding: 10px; display: inline-block; margin: 10px 0; border-radius: 5px; }
+        #qrcode-res img { display: block; }
+
+        /* カメラエリア */
+        #reader { width: 100%; border: 1px solid var(--neon); background: #000; }
+
+        /* ハブに戻るボタン（特大） */
+        .back-hub { margin-top: 40px; background: var(--neon); color: var(--bg); font-weight: bold; font-size: 1.1rem; padding: 20px; border-radius: 10px; text-align: center; width: 100%; }
+    </style>
+</head>
+<body>
+
+    <h1>QR:COMMANDER</h1>
+
+    <div class="container">
+        <div class="section">
+            <p style="font-size: 0.8rem;">[ MODE: GENERATE ]</p>
+            <textarea id="qr-input" rows="4" placeholder="テキストを入力..."></textarea>
+            <div id="qrcode-res"></div>
+            <button class="btn" onclick="generateQR()">QR生成</button>
+            <button class="btn" onclick="downloadQR()">画像を保存 (DOWNLOAD)</button>
+        </div>
+
+        <div class="section">
+            <p style="font-size: 0.8rem;">[ MODE: SCANNER ]</p>
+            <div id="reader"></div>
+            <button class="btn" onclick="startScan()">カメラ起動</button>
+            <p id="scan-result" style="word-break: break-all; font-size: 0.8rem; margin-top: 10px; color: #fff;"></p>
+        </div>
+
+        <a href="index.html" class="back-hub">≪ BACK TO HUB</a>
+    </div>
+
+    <div style="height: 50px;"></div>
+
+    <script>
+        // --- QR生成ロジック ---
+        const qrDisplay = document.getElementById("qrcode-res");
+        const qrcode = new QRCode(qrDisplay, {
+            width: 160,
+            height: 160,
+            correctLevel: QRCode.CorrectLevel.M
+        });
+
+        function generateQR() {
+            const text = document.getElementById("qr-input").value;
+            if (text) {
+                qrcode.makeCode(text);
+            }
+        }
+
+        function downloadQR() {
+            const img = qrDisplay.querySelector("img");
+            if (!img) return alert("先にQRを生成してください");
+            const link = document.createElement("a");
+            link.download = "qr_code.png";
+            link.href = img.src;
+            link.click();
+        }
+
+        // --- QRスキャンロジック ---
+        function onScanSuccess(decodedText, decodedResult) {
+            document.getElementById("scan-result").innerText = "RESULT: " + decodedText;
+            // 読み取った内容を入力欄にも入れる（便利機能）
+            document.getElementById("qr-input").value = decodedText;
+        }
+
+        function startScan() {
+            const html5QrcodeScanner = new Html5Qrcode("reader");
+            html5QrcodeScanner.start(
+                { facingMode: "environment" }, // 背面カメラを使用
+                { fps: 10, qrbox: { width: 250, height: 250 } },
+                onScanSuccess
+            ).catch(err => alert("カメラの起動に失敗しました"));
+        }
+    </script>
+</body>
+</html>
