@@ -5,9 +5,44 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>THE BASE - d(^_^o)</title>
     <style>
-        :root { --neon: #00ff41; --bg: #050505; --panel: rgba(0, 255, 65, 0.1); }
-        body { background: var(--bg); color: var(--neon); font-family: 'Courier New', monospace; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-        h1 { margin-top: 30px; font-size: 1.2rem; text-shadow: 0 0 10px var(--neon); letter-spacing: 4px; }
+        :root { 
+            --neon: #00ff41; 
+            --bg: #050505; 
+            --panel: rgba(0, 255, 65, 0.1); 
+        }
+        body { 
+            background: var(--bg); 
+            color: var(--neon); 
+            font-family: 'Courier New', monospace; 
+            margin: 0; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            min-height: 100vh; 
+            transition: background 0.5s, color 0.5s; /* 切り替えをスムーズに */
+        }
+        
+        /* モード切替ボタンのエリア */
+        .theme-selector {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .theme-btn {
+            background: transparent;
+            border: 1px solid var(--neon);
+            color: var(--neon);
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 0.7rem;
+            border-radius: 3px;
+            transition: 0.3s;
+        }
+        .theme-btn:hover { background: var(--panel); }
+
+        h1 { margin-top: 20px; font-size: 1.2rem; text-shadow: 0 0 10px var(--neon); letter-spacing: 4px; }
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; width: 95%; max-width: 800px; margin: 20px 0; }
         .card { background: var(--panel); border: 1px solid var(--neon); padding: 15px; text-decoration: none; color: var(--neon); border-radius: 5px; transition: 0.3s; display: flex; flex-direction: column; justify-content: center; min-height: 80px; }
         .card:active { background: var(--neon); color: var(--bg); transform: scale(0.95); }
@@ -17,6 +52,13 @@
     </style>
 </head>
 <body>
+    <div class="theme-selector">
+        <button class="theme-btn" onclick="setTheme('default')">TERMINAL</button>
+        <button class="theme-btn" onclick="setTheme('teal')">OCEAN RELAX</button>
+        <button class="theme-btn" onclick="setTheme('sakura')">JAPAN PINK</button>
+        <button class="theme-btn" onclick="setTheme('earth')">EARTH & SOIL</button>
+    </div>
+
     <h1>TERMINAL:02</h1>
     <div class="grid">
         <a href="digital_cigarette.html" class="card"><h2>デジタルタバコ</h2><p>金のない時用</p></a>
@@ -45,13 +87,28 @@
     <div class="footer">STATUS: ONLINE / (d:^_^o)</div>
 
     <script>
+    // テーマ切り替え機能
+    function setTheme(mode) {
+        const root = document.documentElement;
+        const themes = {
+            'default': { neon: '#00ff41', bg: '#050505', panel: 'rgba(0, 255, 65, 0.1)' },
+            'teal':    { neon: '#4FD1C5', bg: '#002B2E', panel: 'rgba(79, 209, 197, 0.1)' }, // 深海
+            'sakura':  { neon: '#FFB7C5', bg: '#1F1214', panel: 'rgba(255, 183, 197, 0.1)' }, // 桜・和
+            'earth':   { neon: '#A3B18A', bg: '#283618', panel: 'rgba(163, 177, 138, 0.1)' }  // 森・土
+        };
+        
+        const theme = themes[mode];
+        root.style.setProperty('--neon', theme.neon);
+        root.style.setProperty('--bg', theme.bg);
+        root.style.setProperty('--panel', theme.panel);
+    }
+
     (function() {
         let secretCounter = 0;
         let lastClickTime = 0;
 
         document.addEventListener('pointerdown', (e) => {
             const currentTime = new Date().getTime();
-            
             if (e.clientX < 80 && e.clientY < 80) {
                 if (currentTime - lastClickTime < 1000) {
                     secretCounter++;
@@ -63,10 +120,10 @@
                 if (secretCounter >= 5) {
                     document.body.style.background = "#ff00ff";
                     document.body.style.color = "#ffffff";
-                    const links = document.querySelectorAll('a');
-                    links.forEach(a => {
-                        a.style.color = "#000";
-                        a.style.background = "#fff";
+                    const links = document.querySelectorAll('a, button');
+                    links.forEach(el => {
+                        el.style.color = "#000";
+                        el.style.background = "#fff";
                     });
                     alert("ボクを見つけてくれてありがとう！ d(^_^o)\n承認欲求、満たされました。");
                     secretCounter = 0;
