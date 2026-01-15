@@ -1,132 +1,197 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CHAOS-GLASS - d(^_^o)</title>
-    <style>
-        body { background: #050505; color: #00ff41; font-family: monospace; margin: 0; overflow: hidden; touch-action: none; }
-        #canvas { width: 100vw; height: 100vh; display: block; }
-        .ui { position: fixed; top: 10px; left: 10px; pointer-events: none; opacity: 0.7; }
-        .msg { position: fixed; bottom: 20px; right: 20px; font-size: 10px; opacity: 0.4; text-align: right; }
-        a { color: #00ff41; text-decoration: none; border: 1px solid #00ff41; padding: 2px 5px; }
-    </style>
+<meta charset="UTF-8">
+<title>LIFE GAME - THE BASE</title>
+<style>
+:root { --neon: #00ff41; --bg: #000; }
+body { background: var(--bg); color: var(--neon); font-family: 'Courier New', monospace; display: flex; flex-direction: column; align-items: center; margin: 0; overflow: hidden; }
+
+/* 走査線 & 画面の揺らぎ */
+body::before {
+    content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.04), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.04));
+    z-index: 100; background-size: 100% 4px, 3px 100%; pointer-events: none;
+}
+body::after {
+    content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0;
+    background: rgba(18, 16, 16, 0.1); opacity: 0; z-index: 101; pointer-events: none;
+    animation: flicker 0.12s infinite;
+}
+@keyframes flicker {
+    0% { opacity: 0.12; } 50% { opacity: 0.03; } 100% { opacity: 0.11; }
+}
+
+canvas { 
+    border: 1px solid #333; cursor: crosshair; image-rendering: pixelated; background: #000;
+    box-shadow: -2px 0 3px rgba(255,0,0,0.15), 2px 0 3px rgba(0,0,255,0.15);
+}
+
+.controls { padding: 10px; display: flex; gap: 10px; background: #111; width: 100%; justify-content: center; border-bottom: 2px solid var(--neon); z-index: 110; position: relative; }
+button { background: #000; color: var(--neon); border: 1px solid var(--neon); padding: 5px 15px; cursor: pointer; font-family: monospace; }
+button:hover { background: var(--neon); color: #000; }
+.btn-back { position: absolute; left: 10px; background: #222; }
+
+/* 四隅のスライダー */
+.corner-slider { position: absolute; background: var(--neon); z-index: 120; opacity: 0.6; pointer-events: none; }
+.h-slider { height: 2px; width: 0; }
+.v-slider { width: 2px; height: 0; }
+.s-top    { top: 0; left: 0; animation: slide-h 3.1s infinite ease-in-out; }
+.s-bottom { bottom: 0; right: 0; animation: slide-h 4.3s infinite ease-in-out reverse; }
+.s-left   { top: 0; left: 0; animation: slide-v 2.7s infinite ease-in-out; }
+.s-right  { bottom: 0; right: 0; animation: slide-v 3.9s infinite ease-in-out reverse; }
+
+@keyframes slide-h { 0% { width: 0; left: 0; } 50% { width: 150px; } 100% { width: 0; left: 100%; } }
+@keyframes slide-v { 0% { height: 0; top: 0; } 50% { height: 150px; } 100% { height: 0; top: 100%; } }
+
+.status { font-size: 12px; margin-top: 5px; }
+</style>
 </head>
 <body>
-    <div class="ui">
-        <div>PARTICLES: <span id="time-val">0</span></div>
-        <div>GRAVITY: <span id="energy-val">0</span></div>
-    </div>
-    <div class="msg">
-        タップで放流 / 激しく振って全消去<br>
-        <a href="index.html">[HUBに戻る]</a>
-    </div>
-    <canvas id="canvas"></canvas>
+
+<div class="corner-slider h-slider s-top"></div>
+<div class="corner-slider h-slider s-bottom"></div>
+<div class="corner-slider v-slider s-left"></div>
+<div class="corner-slider v-slider s-right"></div>
+
+<div class="controls">
+    <button class="btn-back" onclick="location.href='index.html'">&lt; TERMINAL</button>
+    <strong>【LIFE SECTION】</strong>
+    <button onclick="reset()">ALL KILL</button>
+    <button onclick="randomSeed()">FEED SEED</button>
+    <div class="status">GEN: <span id="gen">0</span></div>
+</div>
+
+<canvas id="lifeCanvas"></canvas>
+
+<div style="padding: 10px; font-size: 12px; color: #00ff41; opacity: 0.5; z-index:110;">
+    TRACE MODE: ACTIVE / ALBINOS SURVIVAL +1 / GEN: <span id="gen-label">0</span>
+</div>
 
 <script>
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
-    let particles = [];
-    let width, height;
+const canvas = document.getElementById('lifeCanvas');
+const ctx = canvas.getContext('2d');
+const cellSize = 10;
+let cols, rows, grid, trails, gen = 0;
 
-    function init() {
-        width = canvas.width = window.innerWidth;
-        height = canvas.height = window.innerHeight;
-    }
-    window.addEventListener('resize', init);
-    init();
+function init() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight - 100;
+    cols = Math.floor(canvas.width / cellSize);
+    rows = Math.floor(canvas.height / cellSize);
+    grid = Array.from({ length: cols }, () => Array(rows).fill(0));
+    // 跡（トレイル）を保存する配列
+    trails = Array.from({ length: cols }, () => Array(rows).fill(0));
+}
 
-    class Particle {
-        constructor(x, y) {
-            this.x = x;
-            this.y = y;
-            this.vx = (Math.random() - 0.5) * 15;
-            this.vy = (Math.random() - 0.5) * 15;
+function draw() {
+    // 背景を真っ黒に塗らず、少しずつ前のフレームを消していく（残像効果）
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    let next = grid.map(arr => [...arr]);
+    
+    for (let col = 0; col < cols; col++) {
+        for (let row = 0; row < rows; row++) {
+            let state = grid[col][row];
+            let neighbors = countNeighbors(grid, col, row);
             
-            // URLの「?name=名前」を読み取る魔法
-            const urlParams = new URLSearchParams(window.location.search);
-            const targetName = urlParams.get('name'); // ここで名前をゲット
-
-            const isSpecial = Math.random() < 0.05; // 5%に確率アップ
-            const chars = ['も', 'よ', '笠', '井', '山', 'る'];
-            
-            // もしURLに名前が入ってたら、そいつを優先的に降らせる！
-            if (targetName && Math.random() < 0.1) {
-                this.char = targetName;
-                this.color = '#ffeb3b'; // 名前は目立つ黄色
-                this.size = 25;
+            // 生死判定
+            if (state >= 1) {
+                // 跡を残す（生存している場所の数値を上げる）
+                trails[col][row] = Math.min(trails[col][row] + 0.2, 1.0);
+                
+                if (neighbors < 2 || neighbors > 3) {
+                    next[col][row] = (state === 2) ? 1 : 0; // アルビノは1回耐える
+                }
             } else {
-                this.char = isSpecial ? '👑' : chars[Math.floor(Math.random() * chars.length)];
-                this.color = isSpecial ? '#ff41ff' : '#00ff41'; 
-                this.size = isSpecial ? 40 : (Math.random() * 10 + 15);
+                if (neighbors === 3) {
+                    next[col][row] = Math.random() < 0.02 ? 2 : 1;
+                }
+                // 跡を徐々に消す（自然な減衰）
+                trails[col][row] *= 0.95;
+            }
+            
+            // 跡（這い跡）の描画
+            if (trails[col][row] > 0.01) {
+                ctx.fillStyle = `rgba(0, 255, 65, ${trails[col][row] * 0.15})`;
+                ctx.fillRect(col * cellSize, row * cellSize, cellSize - 1, cellSize - 1);
+            }
+
+            // 本体の描画
+            if (state >= 1) {
+                if (state === 2) {
+                    ctx.fillStyle = Math.random() > 0.1 ? '#ffffff' : '#ffb7c5';
+                    ctx.shadowBlur = 12;
+                    ctx.shadowColor = '#fff';
+                } else {
+                    ctx.fillStyle = '#00ff41';
+                    ctx.shadowBlur = 0;
+                }
+                ctx.fillRect(col * cellSize, row * cellSize, cellSize - 1, cellSize - 1);
+                ctx.shadowBlur = 0;
             }
         }
-        update(gx, gy) {
-            this.vx += gx;
-            this.vy += gy;
-            this.x += this.vx;
-            this.y += this.vy;
-            this.vx *= 0.96; // 少し摩擦を強めに
-            this.vy *= 0.96;
+    }
+    
+    grid = next;
+    document.getElementById('gen').innerText = gen;
+    document.getElementById('gen-label').innerText = gen++;
+    requestAnimationFrame(draw);
+}
 
-            if (this.x < 0 || this.x > width) this.vx *= -0.7;
-            if (this.y < 0 || this.y > height) this.vy *= -0.7;
-            this.x = Math.max(0, Math.min(width, this.x));
-            this.y = Math.max(0, Math.min(height, this.y));
-        }
-        draw() {
-            ctx.fillStyle = this.color;
-            ctx.font = `bold ${this.size}px monospace`;
-            ctx.fillText(this.char, this.x, this.y);
+function countNeighbors(g, x, y) {
+    let sum = 0;
+    for (let i = -1; i < 2; i++) {
+        for (let j = -1; j < 2; j++) {
+            let c = (x + i + cols) % cols;
+            let r = (y + j + rows) % rows;
+            if (g[c][r] >= 1) sum++;
         }
     }
+    if (g[x][y] >= 1) sum--;
+    return sum;
+}
 
-    let gx = 0, gy = 0.5; 
-    window.addEventListener('deviceorientation', (e) => {
-        gx = (e.gamma || 0) * 0.1;
-        gy = (e.beta || 0) * 0.1;
-    });
+canvas.addEventListener('mousedown', e => {
+    const rect = canvas.getBoundingClientRect();
+    const x = Math.floor((e.clientX - rect.left) / cellSize);
+    const y = Math.floor((e.clientY - rect.top) / cellSize);
+    if(grid[x] && grid[x][y] !== undefined) {
+        grid[x][y] = Math.random() < 0.1 ? 2 : 1;
+    }
+});
 
-    // 激しく振ったら全消去（ちゃぶ台返し）
-    let lastX, lastY;
-    window.addEventListener('devicemotion', (e) => {
-        let acc = e.accelerationIncludingGravity;
-        if (!acc) return;
-        let delta = Math.abs(acc.x - (lastX || 0)) + Math.abs(acc.y - (lastY || 0));
-        if (delta > 60) { 
-            particles = []; 
-            if(navigator.vibrate) navigator.vibrate([50, 50]);
-        }
-        lastX = acc.x; lastY = acc.y;
-    });
+function randomSeed() {
+    for (let i = 0; i < 600; i++) {
+        const rx = Math.floor(Math.random()*cols);
+        const ry = Math.floor(Math.random()*rows);
+        grid[rx][ry] = Math.random() < 0.05 ? 2 : 1;
+    }
+}
 
-    const addParticles = (e) => {
-        const x = e.clientX || (e.touches && e.touches[0].clientX);
-        const y = e.clientY || (e.touches && e.touches[0].clientY);
-        for(let i=0; i<15; i++) {
-            particles.push(new Particle(x, y));
-        }
-    };
-    canvas.addEventListener('mousedown', addParticles);
-    canvas.addEventListener('touchstart', addParticles);
+function reset() {
+    grid = Array.from({ length: cols }, () => Array(rows).fill(0));
+    trails = Array.from({ length: cols }, () => Array(rows).fill(0));
+    gen = 0;
+}
 
-    function loop() {
-        ctx.fillStyle = 'rgba(5, 5, 5, 0.2)'; 
-        ctx.fillRect(0, 0, width, height);
-        
-        particles.forEach(p => {
-            p.update(gx, gy);
-            p.draw();
+window.addEventListener('resize', init);
+init();
+draw();
+
+// 停滞防止（グライダー注入）
+setInterval(() => {
+    let count = 0;
+    grid.forEach(c => c.forEach(r => { if(r >= 1) count++; }));
+    if (count < 50) {
+        const rx = Math.floor(Math.random() * (cols - 5));
+        const ry = Math.floor(Math.random() * (rows - 5));
+        [[0,1], [1,2], [2,0], [2,1], [2,2]].forEach(([dx, dy]) => {
+            if(grid[rx+dx]) grid[rx+dx][ry+dy] = 1;
         });
-
-        if (particles.length > 50) particles.shift(); 
-
-        document.getElementById('time-val').innerText = particles.length;
-        document.getElementById('energy-val').innerText = Math.floor(Math.abs(gx) + Math.abs(gy));
-        
-        requestAnimationFrame(loop);
     }
-    loop();
+}, 3000);
 </script>
 </body>
 </html>
