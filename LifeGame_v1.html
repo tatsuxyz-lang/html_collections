@@ -7,25 +7,24 @@
 :root { --neon: #00ff41; --bg: #000; }
 body { background: var(--bg); color: var(--neon); font-family: 'Courier New', monospace; display: flex; flex-direction: column; align-items: center; margin: 0; overflow: hidden; }
 
-/* 1. 走査線と2. 画面の揺らぎ(Flicker) */
+/* 1. 走査線 & 2. 画面の揺らぎ */
 body::before {
     content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0;
-    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.04), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.04));
     z-index: 100; background-size: 100% 4px, 3px 100%; pointer-events: none;
 }
 body::after {
     content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0;
     background: rgba(18, 16, 16, 0.1); opacity: 0; z-index: 101; pointer-events: none;
-    animation: flicker 0.15s infinite;
+    animation: flicker 0.12s infinite;
 }
 @keyframes flicker {
-    0% { opacity: 0.1; } 50% { opacity: 0.02; } 100% { opacity: 0.09; }
+    0% { opacity: 0.12; } 50% { opacity: 0.03; } 100% { opacity: 0.11; }
 }
 
 canvas { 
     border: 1px solid #333; cursor: crosshair; image-rendering: pixelated; background: #000;
-    /* 3. 色収差（にじみ）を影で表現 */
-    box-shadow: -2px 0 2px rgba(255,0,0,0.2), 2px 0 2px rgba(0,0,255,0.2);
+    box-shadow: -2px 0 3px rgba(255,0,0,0.15), 2px 0 3px rgba(0,0,255,0.15);
 }
 
 .controls { padding: 10px; display: flex; gap: 10px; background: #111; width: 100%; justify-content: center; border-bottom: 2px solid var(--neon); z-index: 110; position: relative; }
@@ -33,22 +32,28 @@ button { background: #000; color: var(--neon); border: 1px solid var(--neon); pa
 button:hover { background: var(--neon); color: #000; }
 .btn-back { position: absolute; left: 10px; background: #222; }
 
-/* 四隅のスライダー（常時稼働） */
-.corner-slider { position: absolute; background: var(--neon); z-index: 120; opacity: 0.6; }
-.h-slider { height: 2px; width: 0; animation: slide-h 3s infinite linear; }
-.v-slider { width: 2px; height: 0; animation: slide-v 3s infinite linear; }
-@keyframes slide-h { 0% { width: 0; left: 0; } 50% { width: 100px; } 100% { width: 0; left: 100%; } }
-@keyframes slide-v { 0% { height: 0; top: 0; } 50% { height: 100px; } 100% { height: 0; top: 100%; } }
+/* 四隅のスライダー（周期をバラバラにして停止を防止） */
+.corner-slider { position: absolute; background: var(--neon); z-index: 120; opacity: 0.6; pointer-events: none; }
+.h-slider { height: 2px; width: 0; }
+.v-slider { width: 2px; height: 0; }
+
+.s-top    { top: 0; left: 0; animation: slide-h 3.1s infinite ease-in-out; }
+.s-bottom { bottom: 0; right: 0; animation: slide-h 4.3s infinite ease-in-out reverse; }
+.s-left   { top: 0; left: 0; animation: slide-v 2.7s infinite ease-in-out; }
+.s-right  { bottom: 0; right: 0; animation: slide-v 3.9s infinite ease-in-out reverse; }
+
+@keyframes slide-h { 0% { width: 0; left: 0; } 50% { width: 150px; } 100% { width: 0; left: 100%; } }
+@keyframes slide-v { 0% { height: 0; top: 0; } 50% { height: 150px; } 100% { height: 0; top: 100%; } }
 
 .status { font-size: 12px; margin-top: 5px; }
 </style>
 </head>
 <body>
 
-<div class="corner-slider h-slider" style="top:0; left:0;"></div>
-<div class="corner-slider h-slider" style="bottom:0; left:0;"></div>
-<div class="corner-slider v-slider" style="top:0; left:0;"></div>
-<div class="corner-slider v-slider" style="top:0; right:0;"></div>
+<div class="corner-slider h-slider s-top"></div>
+<div class="corner-slider h-slider s-bottom"></div>
+<div class="corner-slider v-slider s-left"></div>
+<div class="corner-slider v-slider s-right"></div>
 
 <div class="controls">
     <button class="btn-back" onclick="location.href='index.html'">&lt; TERMINAL</button>
@@ -61,7 +66,7 @@ button:hover { background: var(--neon); color: #000; }
 <canvas id="lifeCanvas"></canvas>
 
 <div style="padding: 10px; font-size: 12px; color: #00ff41; opacity: 0.5; z-index:110;">
-    CLICK TO FEED LIFE / <span id="bad-pixel-status">MONITOR DEGRADED</span>
+    MUTATION RATE: 2% / ALBINOS DETECTED
 </div>
 
 <script>
@@ -70,24 +75,13 @@ const ctx = canvas.getContext('2d');
 const cellSize = 10;
 let cols, rows, grid, gen = 0;
 
-// 不良ピクセルのデータ
-let badPixels = [];
-
 function init() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight - 100;
     cols = Math.floor(canvas.width / cellSize);
     rows = Math.floor(canvas.height / cellSize);
+    // 0: 死, 1: 生(緑), 2: アルビノ(白/桃)
     grid = Array.from({ length: cols }, () => Array(rows).fill(0));
-    
-    // ランダムに「ドット欠け（常時白/点滅）」を生成
-    for(let i=0; i<15; i++) {
-        badPixels.push({
-            x: Math.floor(Math.random()*cols),
-            y: Math.floor(Math.random()*rows),
-            type: Math.random() > 0.5 ? 'dead' : 'flicker'
-        });
-    }
 }
 
 function draw() {
@@ -100,24 +94,34 @@ function draw() {
             let state = grid[col][row];
             let neighbors = countNeighbors(grid, col, row);
             
-            if (state === 1 && (neighbors < 2 || neighbors > 3)) next[col][row] = 0;
-            else if (state === 0 && neighbors === 3) next[col][row] = 1;
+            if (state >= 1) { // 生存時
+                if (neighbors < 2 || neighbors > 3) {
+                    // アルビノ(state:2)は一度だけ死を回避して通常種になる
+                    next[col][row] = (state === 2) ? 1 : 0;
+                }
+            } else { // 誕生時
+                if (neighbors === 3) {
+                    // 2%の確率でアルビノ誕生
+                    next[col][row] = Math.random() < 0.02 ? 2 : 1;
+                }
+            }
             
-            if (state === 1) {
-                ctx.fillStyle = '#00ff41';
+            if (state >= 1) {
+                if (state === 2) {
+                    // アルビノの描画（白またはピンクで発光感）
+                    ctx.fillStyle = Math.random() > 0.1 ? '#ffffff' : '#ffb7c5';
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = '#fff';
+                } else {
+                    ctx.fillStyle = '#00ff41';
+                    ctx.shadowBlur = 0;
+                }
                 ctx.fillRect(col * cellSize, row * cellSize, cellSize - 1, cellSize - 1);
+                ctx.shadowBlur = 0; // リセット
             }
         }
     }
     
-    // ドット欠け・不良ピクセルの描画（遊び心）
-    badPixels.forEach(p => {
-        if (p.type === 'dead' || (p.type === 'flicker' && Math.random() > 0.1)) {
-            ctx.fillStyle = Math.random() > 0.9 ? '#fff' : '#444'; // たまに白く光る
-            ctx.fillRect(p.x * cellSize, p.y * cellSize, cellSize - 1, cellSize - 1);
-        }
-    });
-
     grid = next;
     document.getElementById('gen').innerText = gen++;
     requestAnimationFrame(draw);
@@ -129,10 +133,10 @@ function countNeighbors(g, x, y) {
         for (let j = -1; j < 2; j++) {
             let c = (x + i + cols) % cols;
             let r = (y + j + rows) % rows;
-            sum += g[c][r];
+            if (g[c][r] >= 1) sum++;
         }
     }
-    sum -= g[x][y];
+    if (g[x][y] >= 1) sum--;
     return sum;
 }
 
@@ -141,19 +145,16 @@ canvas.addEventListener('mousedown', e => {
     const x = Math.floor((e.clientX - rect.left) / cellSize);
     const y = Math.floor((e.clientY - rect.top) / cellSize);
     if(grid[x] && grid[x][y] !== undefined) {
-        grid[x][y] = 1;
-        // 少し広めにエサをまく
-        if(grid[x+1]) grid[x+1][y] = 1;
-        if(grid[x-1]) grid[x-1][y] = 1;
-        if(grid[x][y+1]) grid[x][y+1] = 1;
+        // クリックでエサをまくと時々変異種も混じる
+        grid[x][y] = Math.random() < 0.1 ? 2 : 1;
     }
 });
 
 function randomSeed() {
-    for (let i = 0; i < 500; i++) {
+    for (let i = 0; i < 600; i++) {
         const rx = Math.floor(Math.random()*cols);
         const ry = Math.floor(Math.random()*rows);
-        if(grid[rx]) grid[rx][ry] = 1;
+        grid[rx][ry] = Math.random() < 0.05 ? 2 : 1;
     }
 }
 
@@ -166,19 +167,15 @@ window.addEventListener('resize', init);
 init();
 draw();
 
-// グライダー注入（停滞防止）
+// 停滞防止（グライダー注入）
 setInterval(() => {
     let count = 0;
-    for(let c=0; c<cols; c++) {
-        for(let r=0; r<rows; r++) {
-            if(grid[c][r] === 1) count++;
-        }
-    }
-    if (count < 40) {
+    grid.forEach(c => c.forEach(r => { if(r >= 1) count++; }));
+    if (count < 50) {
         const rx = Math.floor(Math.random() * (cols - 5));
         const ry = Math.floor(Math.random() * (rows - 5));
-        let gld = [[0,1], [1,2], [2,0], [2,1], [2,2]];
-        gld.forEach(([dx, dy]) => {
+        // グライダーの形
+        [[0,1], [1,2], [2,0], [2,1], [2,2]].forEach(([dx, dy]) => {
             if(grid[rx+dx]) grid[rx+dx][ry+dy] = 1;
         });
     }
