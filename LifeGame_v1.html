@@ -4,55 +4,125 @@
 <meta charset="UTF-8">
 <title>LIFE GAME - THE BASE</title>
 <style>
-body { background: #000; color: #00ff41; font-family: monospace; display: flex; flex-direction: column; align-items: center; margin: 0; overflow: hidden; }
-canvas { border: 1px solid #333; cursor: crosshair; image-rendering: pixelated; background: #000; }
-.controls { padding: 10px; display: flex; gap: 10px; background: #111; width: 100%; justify-content: center; border-bottom: 2px solid #00ff41; z-index: 10; }
-button { background: #000; color: #00ff41; border: 1px solid #00ff41; padding: 5px 15px; cursor: pointer; }
-button:hover { background: #00ff41; color: #000; }
+:root { --neon: #00ff41; --bg: #000; }
+body { background: var(--bg); color: var(--neon); font-family: 'Courier New', monospace; display: flex; flex-direction: column; align-items: center; margin: 0; overflow: hidden; }
+
+/* 1. 走査線と2. 画面の揺らぎ(Flicker) */
+body::before {
+    content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+    z-index: 100; background-size: 100% 4px, 3px 100%; pointer-events: none;
+}
+body::after {
+    content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0;
+    background: rgba(18, 16, 16, 0.1); opacity: 0; z-index: 101; pointer-events: none;
+    animation: flicker 0.15s infinite;
+}
+@keyframes flicker {
+    0% { opacity: 0.1; } 50% { opacity: 0.02; } 100% { opacity: 0.09; }
+}
+
+canvas { 
+    border: 1px solid #333; cursor: crosshair; image-rendering: pixelated; background: #000;
+    /* 3. 色収差（にじみ）を影で表現 */
+    box-shadow: -2px 0 2px rgba(255,0,0,0.2), 2px 0 2px rgba(0,0,255,0.2);
+}
+
+.controls { padding: 10px; display: flex; gap: 10px; background: #111; width: 100%; justify-content: center; border-bottom: 2px solid var(--neon); z-index: 110; position: relative; }
+button { background: #000; color: var(--neon); border: 1px solid var(--neon); padding: 5px 15px; cursor: pointer; font-family: monospace; }
+button:hover { background: var(--neon); color: #000; }
+.btn-back { position: absolute; left: 10px; background: #222; }
+
+/* 四隅のスライダー（常時稼働） */
+.corner-slider { position: absolute; background: var(--neon); z-index: 120; opacity: 0.6; }
+.h-slider { height: 2px; width: 0; animation: slide-h 3s infinite linear; }
+.v-slider { width: 2px; height: 0; animation: slide-v 3s infinite linear; }
+@keyframes slide-h { 0% { width: 0; left: 0; } 50% { width: 100px; } 100% { width: 0; left: 100%; } }
+@keyframes slide-v { 0% { height: 0; top: 0; } 50% { height: 100px; } 100% { height: 0; top: 100%; } }
+
 .status { font-size: 12px; margin-top: 5px; }
 </style>
 </head>
 <body>
+
+<div class="corner-slider h-slider" style="top:0; left:0;"></div>
+<div class="corner-slider h-slider" style="bottom:0; left:0;"></div>
+<div class="corner-slider v-slider" style="top:0; left:0;"></div>
+<div class="corner-slider v-slider" style="top:0; right:0;"></div>
+
 <div class="controls">
-<strong>【LIFE SECTION】</strong>
-<button onclick="reset()">ALL KILL</button>
-<button onclick="randomSeed()">FEED SEED</button>
-<div class="status">GEN: <span id="gen">0</span></div>
+    <button class="btn-back" onclick="location.href='index.html'">&lt; TERMINAL</button>
+    <strong>【LIFE SECTION】</strong>
+    <button onclick="reset()">ALL KILL</button>
+    <button onclick="randomSeed()">FEED SEED</button>
+    <div class="status">GEN: <span id="gen">0</span></div>
 </div>
+
 <canvas id="lifeCanvas"></canvas>
-<div style="padding: 10px; font-size: 12px; color: #00ff41; opacity: 0.5;">CLICK TO FEED LIFE</div>
+
+<div style="padding: 10px; font-size: 12px; color: #00ff41; opacity: 0.5; z-index:110;">
+    CLICK TO FEED LIFE / <span id="bad-pixel-status">MONITOR DEGRADED</span>
+</div>
+
 <script>
 const canvas = document.getElementById('lifeCanvas');
 const ctx = canvas.getContext('2d');
 const cellSize = 10;
 let cols, rows, grid, gen = 0;
+
+// 不良ピクセルのデータ
+let badPixels = [];
+
 function init() {
     canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight - 80;
+    canvas.height = window.innerHeight - 100;
     cols = Math.floor(canvas.width / cellSize);
     rows = Math.floor(canvas.height / cellSize);
     grid = Array.from({ length: cols }, () => Array(rows).fill(0));
+    
+    // ランダムに「ドット欠け（常時白/点滅）」を生成
+    for(let i=0; i<15; i++) {
+        badPixels.push({
+            x: Math.floor(Math.random()*cols),
+            y: Math.floor(Math.random()*rows),
+            type: Math.random() > 0.5 ? 'dead' : 'flicker'
+        });
+    }
 }
+
 function draw() {
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
     let next = grid.map(arr => [...arr]);
     for (let col = 0; col < cols; col++) {
         for (let row = 0; row < rows; row++) {
             let state = grid[col][row];
             let neighbors = countNeighbors(grid, col, row);
+            
             if (state === 1 && (neighbors < 2 || neighbors > 3)) next[col][row] = 0;
             else if (state === 0 && neighbors === 3) next[col][row] = 1;
+            
             if (state === 1) {
                 ctx.fillStyle = '#00ff41';
                 ctx.fillRect(col * cellSize, row * cellSize, cellSize - 1, cellSize - 1);
             }
         }
     }
+    
+    // ドット欠け・不良ピクセルの描画（遊び心）
+    badPixels.forEach(p => {
+        if (p.type === 'dead' || (p.type === 'flicker' && Math.random() > 0.1)) {
+            ctx.fillStyle = Math.random() > 0.9 ? '#fff' : '#444'; // たまに白く光る
+            ctx.fillRect(p.x * cellSize, p.y * cellSize, cellSize - 1, cellSize - 1);
+        }
+    });
+
     grid = next;
     document.getElementById('gen').innerText = gen++;
     requestAnimationFrame(draw);
 }
+
 function countNeighbors(g, x, y) {
     let sum = 0;
     for (let i = -1; i < 2; i++) {
@@ -65,28 +135,38 @@ function countNeighbors(g, x, y) {
     sum -= g[x][y];
     return sum;
 }
+
 canvas.addEventListener('mousedown', e => {
     const rect = canvas.getBoundingClientRect();
     const x = Math.floor((e.clientX - rect.left) / cellSize);
     const y = Math.floor((e.clientY - rect.top) / cellSize);
     if(grid[x] && grid[x][y] !== undefined) {
         grid[x][y] = 1;
+        // 少し広めにエサをまく
         if(grid[x+1]) grid[x+1][y] = 1;
         if(grid[x-1]) grid[x-1][y] = 1;
         if(grid[x][y+1]) grid[x][y+1] = 1;
     }
 });
+
 function randomSeed() {
     for (let i = 0; i < 500; i++) {
-        grid[Math.floor(Math.random()*cols)][Math.floor(Math.random()*rows)] = 1;
+        const rx = Math.floor(Math.random()*cols);
+        const ry = Math.floor(Math.random()*rows);
+        if(grid[rx]) grid[rx][ry] = 1;
     }
 }
+
 function reset() {
     grid = Array.from({ length: cols }, () => Array(rows).fill(0));
     gen = 0;
 }
+
+window.addEventListener('resize', init);
 init();
 draw();
+
+// グライダー注入（停滞防止）
 setInterval(() => {
     let count = 0;
     for(let c=0; c<cols; c++) {
@@ -98,9 +178,6 @@ setInterval(() => {
         const rx = Math.floor(Math.random() * (cols - 5));
         const ry = Math.floor(Math.random() * (rows - 5));
         let gld = [[0,1], [1,2], [2,0], [2,1], [2,2]];
-        if (Math.random() < 0.2) {
-            gld = [[2,1], [1,2], [0,0], [0,1], [0,2]];
-        }
         gld.forEach(([dx, dy]) => {
             if(grid[rx+dx]) grid[rx+dx][ry+dy] = 1;
         });
