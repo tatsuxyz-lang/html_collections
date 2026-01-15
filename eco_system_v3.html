@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>LIFE GAME - BIO HAZARD</title>
+<title>ECO-SYSTEM V.3 - THE BASE</title>
 <style>
 :root { --neon: #00ff41; --danger: #ff0033; --bg: #000; }
 body { background: var(--bg); color: var(--neon); font-family: 'Courier New', monospace; display: flex; flex-direction: column; align-items: center; margin: 0; overflow: hidden; }
@@ -20,44 +20,38 @@ body::after {
 }
 @keyframes flicker { 0% { opacity: 0.12; } 50% { opacity: 0.03; } 100% { opacity: 0.11; } }
 
-canvas { 
-    border: 1px solid #333; cursor: crosshair; image-rendering: pixelated; background: #000;
-    box-shadow: -2px 0 5px rgba(255,0,0,0.2);
-}
+canvas { border: 1px solid #333; cursor: crosshair; image-rendering: pixelated; background: #000; box-shadow: -2px 0 5px rgba(255,0,0,0.2); }
 
 .controls { padding: 10px; display: flex; gap: 10px; background: #111; width: 100%; justify-content: center; border-bottom: 2px solid var(--neon); z-index: 110; position: relative; }
 button { background: #000; color: var(--neon); border: 1px solid var(--neon); padding: 5px 15px; cursor: pointer; font-family: monospace; transition: 0.2s; }
 button:hover { background: var(--neon); color: #000; }
 button.active { background: var(--danger); color: #fff; border-color: #fff; }
-
 .btn-back { position: absolute; left: 10px; background: #222; }
 
 /* 四隅のスライダー */
 .corner-slider { position: absolute; background: var(--neon); z-index: 120; opacity: 0.6; pointer-events: none; }
 .h-slider { height: 2px; width: 0; }
 .v-slider { width: 2px; height: 0; }
-.s-top    { top: 0; left: 0; animation: slide-h 3.1s infinite ease-in-out; }
+.s-top { top: 0; left: 0; animation: slide-h 3.1s infinite ease-in-out; }
 .s-bottom { bottom: 0; right: 0; animation: slide-h 4.3s infinite ease-in-out reverse; }
-.s-left   { top: 0; left: 0; animation: slide-v 2.7s infinite ease-in-out; }
-.s-right  { bottom: 0; right: 0; animation: slide-v 3.9s infinite ease-in-out reverse; }
+.s-left { top: 0; left: 0; animation: slide-v 2.7s infinite ease-in-out; }
+.s-right { bottom: 0; right: 0; animation: slide-v 3.9s infinite ease-in-out reverse; }
 
 @keyframes slide-h { 0% { width: 0; left: 0; } 50% { width: 150px; } 100% { width: 0; left: 100%; } }
 @keyframes slide-v { 0% { height: 0; top: 0; } 50% { height: 150px; } 100% { height: 0; top: 100%; } }
 
-.warning { color: var(--danger); font-weight: bold; animation: blink 0.5s infinite; visibility: hidden; margin-left: 10px;}
+.warning { color: var(--danger); font-weight: bold; animation: blink 0.5s infinite; visibility: hidden; margin-left: 10px; }
 @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0; } 100% { opacity: 1; } }
 </style>
 </head>
-<body>
-
-<div class="corner-slider h-slider s-top"></div>
+<body onclick="resumeAudio()"> <div class="corner-slider h-slider s-top"></div>
 <div class="corner-slider h-slider s-bottom"></div>
 <div class="corner-slider v-slider s-left"></div>
 <div class="corner-slider v-slider s-right"></div>
 
 <div class="controls">
     <button class="btn-back" onclick="location.href='index.html'">&lt; TERMINAL</button>
-    <strong>【BIO-UNIT】</strong>
+    <strong>【ECO-UNIT V.3】</strong>
     <button onclick="reset()">PURGE</button>
     <button onclick="randomSeed()">INJECT</button>
     <button id="audio-toggle" onclick="toggleAudio()">SOUND OFF</button>
@@ -70,7 +64,7 @@ button.active { background: var(--danger); color: #fff; border-color: #fff; }
 <canvas id="lifeCanvas"></canvas>
 
 <div style="padding: 10px; font-size: 11px; color: #00ff41; opacity: 0.5; z-index:110; text-align: center;">
-    VIRUS MUTATION DETECTED (RED) / ALBINOS ARE IMMUNE / <span id="count-disp">POP: 0</span>
+    VIRUS AUTO-DECAY: ENABLED / GLIDER CYCLE: AUTO-REBIRTH
 </div>
 
 <script>
@@ -79,30 +73,37 @@ const ctx = canvas.getContext('2d');
 const cellSize = 10;
 let cols, rows, grid, trails, gen = 0;
 let isAudioEnabled = false;
-
-// Web Audio API
 let audioCtx;
+
+// ブラウザの音制限を解除するための関数
+function resumeAudio() {
+    if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+}
+
 function toggleAudio() {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     isAudioEnabled = !isAudioEnabled;
     const btn = document.getElementById('audio-toggle');
     btn.innerText = isAudioEnabled ? "SOUND ON" : "SOUND OFF";
     btn.classList.toggle('active', isAudioEnabled);
+    if (isAudioEnabled) audioCtx.resume();
 }
 
 function playHeartbeat(volume, freq) {
-    if (!isAudioEnabled || !audioCtx) return;
+    if (!isAudioEnabled || !audioCtx || audioCtx.state !== 'running') return;
     const osc = audioCtx.createOscillator();
     const g = audioCtx.createGain();
     osc.type = 'sine';
     osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+    osc.frequency.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
     g.gain.setValueAtTime(volume, audioCtx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+    g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
     osc.connect(g);
     g.connect(audioCtx.destination);
     osc.start();
-    osc.stop(audioCtx.currentTime + 0.1);
+    osc.stop(audioCtx.currentTime + 0.15);
 }
 
 function init() {
@@ -120,6 +121,7 @@ function draw() {
     
     let next = grid.map(arr => [...arr]);
     let liveCount = 0;
+    let virusCount = 0;
 
     for (let col = 0; col < cols; col++) {
         for (let row = 0; row < rows; row++) {
@@ -130,17 +132,21 @@ function draw() {
                 liveCount++;
                 trails[col][row] = Math.min(trails[col][row] + 0.1, 1.0);
                 
-                if (state === 3) { // ウイルス
-                    if (neighbors < 1 || neighbors > 4) next[col][row] = 0;
-                } else { // 通常・アルビノ
+                if (state === 3) { 
+                    virusCount++;
+                    // ウイルス自滅ロジック：過密すぎると死骸化（酵母自滅）
+                    if (neighbors < 1 || neighbors > 3) next[col][row] = 0;
+                } else { 
                     if (neighbors < 2 || neighbors > 3) {
                         next[col][row] = (state === 2) ? 1 : 0; 
                     }
                 }
 
+                // ウイルス感染
                 if (state === 1 && hasVirusNeighbor(grid, col, row) && Math.random() > 0.6) {
                     next[col][row] = 3;
                 }
+                // アルビノ浄化
                 if (state === 2 && hasVirusNeighbor(grid, col, row)) {
                     infectNeighbor(next, col, row, 1);
                 }
@@ -151,42 +157,27 @@ function draw() {
                 trails[col][row] *= 0.96;
             }
 
-            // 描画
-            if (trails[col][row] > 0.01) {
-                ctx.fillStyle = (state === 3 || (state === 0 && trails[col][row] > 0.5 && Math.random() > 0.9)) 
-                                ? `rgba(255, 0, 51, ${trails[col][row] * 0.08})` 
-                                : `rgba(0, 255, 65, ${trails[col][row] * 0.08})`;
-                ctx.fillRect(col * cellSize, row * cellSize, cellSize - 1, cellSize - 1);
-            }
-
+            // 描画ロジック
             if (state >= 1) {
-                if (state === 3) { 
-                    ctx.fillStyle = '#ff0033';
-                    ctx.shadowBlur = Math.sin(gen*0.2)*5 + 5;
-                    ctx.shadowColor = '#f00';
-                } else if (state === 2) { 
-                    ctx.fillStyle = '#ffffff';
-                    ctx.shadowBlur = 10;
-                    ctx.shadowColor = '#fff';
-                } else { 
-                    ctx.fillStyle = '#00ff41';
-                    ctx.shadowBlur = 0;
-                }
+                ctx.fillStyle = (state === 3) ? '#ff0033' : (state === 2 ? '#ffffff' : '#00ff41');
+                if (state === 2) { ctx.shadowBlur = 10; ctx.shadowColor = '#fff'; }
+                else if (state === 3) { ctx.shadowBlur = 5; ctx.shadowColor = '#f00'; }
                 ctx.fillRect(col * cellSize, row * cellSize, cellSize - 1, cellSize - 1);
                 ctx.shadowBlur = 0;
+            } else if (trails[col][row] > 0.01) {
+                ctx.fillStyle = `rgba(0, 255, 65, ${trails[col][row] * 0.08})`;
+                ctx.fillRect(col * cellSize, row * cellSize, cellSize - 1, cellSize - 1);
             }
         }
     }
 
-    // 危機演出
-    const isCrisis = liveCount > 0 && liveCount < 60;
+    const isCrisis = liveCount > 0 && liveCount < 50;
     document.getElementById('warn').style.visibility = isCrisis ? 'visible' : 'hidden';
-    document.getElementById('count-disp').innerText = `POP: ${liveCount}`;
     
-    // 音の選択権（ボタンがONの時のみ）
-    if (isCrisis && isAudioEnabled && gen % 50 === 0) {
-        playHeartbeat(0.4, 55); 
-        setTimeout(() => playHeartbeat(0.2, 50), 220);
+    // 心音演出（SOUND ON時のみ）
+    if (isCrisis && isAudioEnabled && gen % 40 === 0) {
+        playHeartbeat(0.5, 55); 
+        setTimeout(() => playHeartbeat(0.3, 50), 200);
     }
 
     grid = next;
@@ -227,13 +218,6 @@ function infectNeighbor(nextGrid, x, y, targetState) {
     }
 }
 
-canvas.addEventListener('mousedown', e => {
-    const rect = canvas.getBoundingClientRect();
-    const x = Math.floor((e.clientX - rect.left) / cellSize);
-    const y = Math.floor((e.clientY - rect.top) / cellSize);
-    if(grid[x]) grid[x][y] = 2; 
-});
-
 function randomSeed() {
     for (let i = 0; i < 500; i++) {
         grid[Math.floor(Math.random()*cols)][Math.floor(Math.random()*rows)] = 1;
@@ -246,16 +230,38 @@ function reset() {
     gen = 0;
 }
 
+canvas.addEventListener('mousedown', e => {
+    resumeAudio();
+    const rect = canvas.getBoundingClientRect();
+    const x = Math.floor((e.clientX - rect.left) / cellSize);
+    const y = Math.floor((e.clientY - rect.top) / cellSize);
+    if(grid[x]) grid[x][y] = 2; 
+});
+
 init();
 draw();
 
+// 永久機関：絶滅しそうになるとグライダーを注入
 setInterval(() => {
-    if (Math.random() < 0.2) { // ウイルス発生率を少し抑えめに
+    let count = 0;
+    grid.forEach(c => c.forEach(r => { if(r >= 1) count++; }));
+    if (count < 30) {
+        const rx = Math.floor(Math.random() * (cols - 5));
+        const ry = Math.floor(Math.random() * (rows - 5));
+        [[0,1], [1,2], [2,0], [2,1], [2,2]].forEach(([dx, dy]) => {
+            if(grid[rx+dx]) grid[rx+dx][ry+dy] = 1;
+        });
+    }
+}, 3000);
+
+// ウイルス発生（稀に）
+setInterval(() => {
+    if (Math.random() < 0.2) {
         const rx = Math.floor(Math.random()*cols);
         const ry = Math.floor(Math.random()*rows);
         if(grid[rx]) grid[rx][ry] = 3; 
     }
-}, 10000);
+}, 12000);
 </script>
 </body>
 </html>
