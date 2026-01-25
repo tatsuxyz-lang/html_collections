@@ -137,5 +137,52 @@
         });
     })();
     </script>
+    <div id="ringo-kun" style="position: fixed; bottom: -100px; right: 20px; width: 150px; transition: bottom 0.5s ease-in-out; z-index: 10000; cursor: pointer;">
+    <div id="ringo-bubble" style="background: white; color: #333; border: 2px solid var(--neon); padding: 10px; border-radius: 15px; font-size: 0.7rem; margin-bottom: 10px; position: relative; display: none; line-height: 1.4;">
+        もしかして、マウスがiPadから戻ってこれなくなってますか？
+    </div>
+    <div style="font-size: 50px; text-align: center;">🍎</div>
+</div>
+
+<script>
+    const ringo = document.getElementById('ringo-kun');
+    const bubble = document.getElementById('ringo-bubble');
+    let idleTimer;
+
+    const messages = [
+        "もしかして、マウスがiPadから戻ってこれなくなってますか？ｗ",
+        "そんなに激しくマウスを振っても、iPadはあなたを離しませんよ。",
+        "知恵の輪、解けますか？僕は応援だけしてますね！",
+        "あ、今「お前を消す方法」って検索しようとしました？",
+        "大丈夫。電源を切れば、すべて解決しますよ（たぶん）。",
+        "iPadの居心地はどうですか？ 永住しちゃいます？"
+    ];
+
+    function showRingo() {
+        ringo.style.bottom = "20px";
+        bubble.style.display = "block";
+        bubble.innerText = messages[Math.floor(Math.random() * messages.length)];
+    }
+
+    function hideRingo() {
+        ringo.style.bottom = "-100px";
+        bubble.style.display = "none";
+    }
+
+    // 10秒間マウスの動きがない、または激しく動かした（ふりをした）時に出現
+    document.addEventListener('mousemove', () => {
+        clearTimeout(idleTimer);
+        // 出現中にマウスを動かしたら10秒後にまた隠れる
+        idleTimer = setTimeout(showRingo, 10000); 
+    });
+
+    ringo.onclick = () => {
+        alert("痛いっ！d(>_<o)\nそんなに叩かなくても、設定画面で『配置』を確認すればいいじゃないですか。");
+        hideRingo();
+    };
+
+    // 初期タイマー
+    idleTimer = setTimeout(showRingo, 5000);
+</script>
 </body>
 </html>
