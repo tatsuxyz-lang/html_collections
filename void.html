@@ -4,14 +4,14 @@
     <meta charset="UTF-8">
     <title>THE VOID - d(^_^o)</title>
     <style>
-        body { background: #000; color: #00ff41; font-family: monospace; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; perspective: 1000px; }
-        #chat-box { width: 400px; padding: 20px; border: 1px solid #00ff41; background: rgba(0,255,0,0.05); z-index: 100; transition: opacity 0.5s; }
+        body { background: #000; color: #00ff41; font-family: monospace; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; perspective: 2000px; }
+        #chat-box { width: 400px; padding: 20px; border: 1px solid #00ff41; background: rgba(0,0,0,0.9); z-index: 1000; transition: opacity 0.3s; }
         #fake-input { border-bottom: 1px solid #00ff41; min-height: 1.2rem; padding: 10px 0; font-size: 1rem; }
         #universe { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; transform-style: preserve-3d; }
-        .btns { position: fixed; bottom: 20px; display: flex; gap: 10px; z-index: 1000; }
-        button { background: rgba(0,0,0,0.7); border: 1px solid #00ff41; color: #00ff41; cursor: pointer; padding: 8px 15px; font-size: 0.8rem; }
-        button:hover { background: #00ff41; color: #000; }
-        .spiral { position: absolute; top: 50%; left: 50%; transform-origin: center; white-space: nowrap; font-weight: bold; }
+        .btns { position: fixed; bottom: 20px; display: flex; gap: 10px; z-index: 5000; }
+        button { background: rgba(0,0,0,0.8); border: 1px solid #00ff41; color: #00ff41; cursor: pointer; padding: 8px 15px; font-size: 0.8rem; }
+        .spiral { position: absolute; top: 50%; left: 50%; transform-origin: center; white-space: nowrap; font-weight: bold; z-index: 2000; }
+        .mascot { position: fixed; font-size: 50px; z-index: 3000; pointer-events: none; filter: drop-shadow(0 0 10px rgba(0,255,65,0.5)); }
     </style>
 </head>
 <body>
@@ -21,9 +21,12 @@
     <div id="fake-input"></div>
 </div>
 
+<div id="mascot-apple" class="mascot">🍎</div>
+<div id="mascot-dolphin" class="mascot">🐬</div>
+
 <div class="btns">
     <button onclick="location.href='index.html'">INDEXに戻る</button>
-    <button onclick="location.reload()">同意</button>
+    <button onclick="location.reload()">同意（もっと加速する）</button>
 </div>
 
 <div id="universe"></div>
@@ -31,18 +34,19 @@
 <script>
     const fakeInput = document.getElementById('fake-input');
     const universe = document.getElementById('universe');
+    const apple = document.getElementById('mascot-apple');
+    const dolphin = document.getElementById('mascot-dolphin');
     const fixedQ = "世界をよくするにはどうすればいい？";
     let qIndex = 0;
     let loopCount = 0;
 
-    // 自動タイピング開始
     function autoType() {
         if (qIndex < fixedQ.length) {
             fakeInput.innerText += fixedQ[qIndex];
             qIndex++;
-            setTimeout(autoType, 100 + Math.random() * 100); // 人間味のある速度で
+            setTimeout(autoType, 80);
         } else {
-            setTimeout(startBigBang, 1000); // 打ち終わったらビッグバンへ
+            setTimeout(startBigBang, 800);
         }
     }
 
@@ -58,45 +62,58 @@
             setTimeout(() => {
                 const div = document.createElement('div');
                 div.innerHTML = `<strong>[${l.n}]</strong>: ${l.t}`;
-                div.style.cssText = `position:fixed; top:${40 + i*10}%; left:50%; transform:translate(-50%,-50%); z-index:200; background:black; padding:10px; border:1px solid #00ff41;`;
+                // 同意に被されるために z-index を低めに設定
+                div.style.cssText = `position:fixed; top:${40 + i*10}%; left:50%; transform:translate(-50%,-50%); z-index:1500; background:black; padding:15px; border:2px solid #00ff41; color:#00ff41; font-size:1.2rem;`;
                 document.body.appendChild(div);
-            }, i * 1500);
+            }, i * 1200);
         });
 
-        setTimeout(expandUniverse, 4000);
+        setTimeout(expandUniverse, 3500);
     }
 
     function expandUniverse() {
-        const interval = setInterval(() => {
+        setInterval(() => {
             const span = document.createElement('span');
             span.className = 'spiral';
             span.innerText = "同意？";
             
-            const angle = loopCount * 0.15;
-            const dist = loopCount * 3;
+            const angle = loopCount * 0.2;
+            // ズームアウト速度を上げつつ、螺旋の密度を調整
+            const dist = loopCount * 4;
             const x = Math.cos(angle) * dist;
             const y = Math.sin(angle) * dist;
 
-            universe.style.transform = `translateZ(-${loopCount * 2}px) rotate(${loopCount * 0.1}deg)`;
+            // 高速ズームアウト（常に最新の「同意？」が手前に来るようにZ軸を調整）
+            universe.style.transform = `translateZ(${loopCount * 5}px) rotate(${loopCount * -0.2}deg)`;
 
             span.style.left = `calc(50% + ${x}px)`;
             span.style.top = `calc(50% + ${y}px)`;
-            span.style.fontSize = `${12 + loopCount * 0.2}px`;
-            span.style.opacity = Math.max(0.05, 1 - loopCount * 0.0005);
-            span.style.transform = `translate(-50%, -50%) rotate(${angle * 50}deg)`;
+            span.style.fontSize = `${14 + loopCount * 0.3}px`;
+            span.style.transform = `translate(-50%, -50%) translateZ(-${loopCount * 5}px) rotate(${angle * 10}deg)`;
 
             universe.appendChild(span);
+
+            // マスコットの不規則な動き
+            const t = Date.now() * 0.002;
+            apple.style.left = (50 + Math.cos(t) * 40) + "%";
+            apple.style.top = (50 + Math.sin(t*0.8) * 40) + "%";
+            dolphin.style.left = (50 + Math.sin(t*1.2) * 40) + "%";
+            dolphin.style.top = (50 + Math.cos(t*0.5) * 40) + "%";
+
+            // 点滅（ダイナミック台無しフラッシュ）
+            if (loopCount > 300 && loopCount % 10 === 0) {
+                document.body.style.background = (loopCount % 20 === 0) ? "#00ff41" : "#000";
+            }
+
             loopCount++;
 
-            // 一定まで膨張したら「同意」ボタンを勝手に押してループ
-            if (loopCount > 1200) {
-                clearInterval(interval);
+            // 虚無の果てでリロード
+            if (loopCount > 1500) {
                 location.reload(); 
             }
-        }, 40);
+        }, 30);
     }
 
-    // 読み込み完了と同時に自動タイピング開始
     window.onload = autoType;
 </script>
 </body>
