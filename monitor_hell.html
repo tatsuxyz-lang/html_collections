@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MONITOR HELL - d(^_^o)</title>
+    <style>
+        :root { 
+            --neon: #ff0044; 
+            --bg: #0a0005; 
+            --panel: rgba(255, 0, 68, 0.12); 
+        }
+        body { 
+            background: var(--bg); 
+            color: var(--neon); 
+            font-family: 'Courier New', monospace; 
+            margin: 0; 
+            padding: 20px; 
+            min-height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center;
+            user-select: none;
+        }
+        h1 {
+            font-size: 1.8rem;
+            letter-spacing: 6px;
+            text-shadow: 0 0 15px var(--neon);
+            margin-bottom: 10px;
+        }
+        .container {
+            max-width: 600px;
+            text-align: center;
+        }
+        .rage-window {
+            background: var(--panel);
+            border: 2px solid var(--neon);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 0 20px rgba(255,0,68,0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        .rage-text {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin: 15px 0;
+        }
+        .btn-area {
+            margin-top: 30px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+        }
+        .hell-btn {
+            background: transparent;
+            border: 2px solid var(--neon);
+            color: var(--neon);
+            padding: 12px 24px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 4px;
+        }
+        .hell-btn:hover {
+            background: var(--neon);
+            color: #000;
+            transform: scale(1.08);
+        }
+        .secret-area {
+            margin-top: 60px;
+            font-size: 0.8rem;
+            opacity: 0.5;
+        }
+        #ringo-kun {
+            position: fixed;
+            bottom: -120px;
+            right: 30px;
+            font-size: 60px;
+            transition: bottom 0.6s ease;
+            cursor: pointer;
+            z-index: 9999;
+        }
+        #ringo-bubble {
+            position: absolute;
+            bottom: 80px;
+            right: 0;
+            background: #111;
+            color: #ff0044;
+            border: 2px solid #ff0044;
+            padding: 12px 18px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            white-space: pre-wrap;
+            max-width: 280px;
+            display: none;
+            box-shadow: 0 0 15px rgba(0,0,0,0.8);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>MONITOR 配置地獄</h1>
+    
+    <div class="rage-window">
+        <div class="rage-text">
+            「サイドカーもミラーリングも全部おかしい」<br>
+            「カーソルが行方不明なんですけど？？？」<br><br>
+            お疲れ様です。<br>
+            もうMacを壁に叩きつけたくなってる気持ち、<br>
+            ここにいる全員が100%わかってます（嘘）
+        </div>
+    </div>
+
+    <div class="btn-area">
+        <button class="hell-btn" onclick="alert('とりあえずケーブル全部抜いて10秒待て。\n奇跡の8割はこれで治る（残り2割は発狂継続）')">ケーブル全部抜く</button>
+        
+        <button class="hell-btn" onclick="alert('「システム設定 → ディスプレイ」開いて\n「配置」の画面でOptionキー押しながら「ディスプレイを並べる」をクリック\n→ 謎の白枠が出てくるはず…出ないなら詰み')">白枠出せ！</button>
+        
+        <button class="hell-btn" onclick="alert('お前を消す方法？\n\n1. 電源ボタン長押し\n2. 強制終了\n3. 魂も一緒に終了\n\n以上！ d(￣▽￣o) ')">お前を消す方法</button>
+    </div>
+
+    <div class="secret-area">
+        ちなみに… 5回連続で画面左上をクリックすると何か起きるかも（？）
+    </div>
+</div>
+
+<div id="ringo-kun">🍎</div>
+<div id="ringo-bubble"></div>
+
+<script>
+    // りんごくん
+    const ringo = document.getElementById('ringo-kun');
+    const bubble = document.getElementById('ringo-bubble');
+    const messages = [
+        "マウスが外部モニターに行ったきり帰ってこない症候群ですね？",
+        "「配置」画面でOption押してみ？ …って、もう50回押した？死ね",
+        "サイドカー有効にした瞬間、全てが崩壊したんだろ？わかるよ〜",
+        "もういっそiPadを売って27インチ買えよ…って金ないか、ごめん",
+        "「お前を消す方法」検索したかったんだろ？正直者だな！",
+        "電源長押し → カウントダウン → さよなら世界…最高のリセットだろ？",
+        "僕の存在は世界をよくしてるよ。だって僕が一人いなくなると、世界を本当に愛している人が一人減るんだから。" // ←NEW!
+    ];
+
+    function showRingo() {
+        ringo.style.bottom = "30px";
+        bubble.style.display = "block";
+        bubble.textContent = messages[Math.floor(Math.random() * messages.length)];
+    }
+
+    function hideRingo() {
+        ringo.style.bottom = "-120px";
+        bubble.style.display = "none";
+    }
+
+    let timer;
+    document.addEventListener('mousemove', () => {
+        clearTimeout(timer);
+        timer = setTimeout(showRingo, 8000);
+    });
+
+    ringo.onclick = () => {
+        alert("叩くなよぉ…d(>_<；)\n「システム設定」→「ディスプレイ」→「配置」タブだよ…もう一回見てみ？");
+        hideRingo();
+    };
+
+    // 5回左上クリックでイースターエッグ
+    let leftTopClick = 0;
+    document.addEventListener('click', e => {
+        if (e.clientX < 60 && e.clientY < 60) {
+            leftTopClick++;
+            if (leftTopClick >= 5) {
+                document.body.style.background = "linear-gradient(45deg, #ff00aa, #00ffff)";
+                document.body.style.color = "#000";
+                alert("…見つけたな。\nここまで来たらもうお前も共犯だぞ？ d(^_^o)");
+                leftTopClick = 0;
+            }
+        } else {
+            leftTopClick = 0;
+        }
+    });
+
+    // 最初にちょっとだけ出てくる
+    setTimeout(showRingo, 4000);
+</script>
+
+</body>
+</html>
