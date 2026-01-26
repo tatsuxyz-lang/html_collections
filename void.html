@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>THE VOID - d(^_^o)</title>
+    <style>
+        body { background: #000; color: #00ff41; font-family: monospace; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        #chat-box { width: 400px; padding: 20px; border: 1px solid #00ff41; background: rgba(0,255,0,0.05); z-index: 10; }
+        input { width: 100%; background: transparent; border: none; border-bottom: 1px solid #00ff41; color: #00ff41; outline: none; padding: 10px 0; }
+        #universe { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; }
+        .log { font-size: 0.8rem; margin: 10px 0; opacity: 0; transition: opacity 0.5s; }
+        .btns { margin-top: 20px; display: flex; gap: 10px; z-index: 100; }
+        button { background: transparent; border: 1px solid #00ff41; color: #00ff41; cursor: pointer; padding: 5px 10px; }
+        button:hover { background: #00ff41; color: #000; }
+        .spiral { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: bold; white-space: nowrap; }
+    </style>
+</head>
+<body>
+
+<div id="chat-box">
+    <p>なんでも質問してね！</p>
+    <input type="text" id="q-input" placeholder="ここに入力...">
+</div>
+
+<div class="btns">
+    <button onclick="location.href='index.html'">INDEXに戻る</button>
+    <button onclick="location.reload()">止める（リセット）</button>
+</div>
+
+<div id="universe"></div>
+
+<script>
+    const input = document.getElementById('q-input');
+    const universe = document.getElementById('universe');
+    const fixedQ = "世界をよくするにはどうすればいい？";
+    let index = 0;
+    let loopCount = 0;
+
+    // 強制書き換え
+    input.onkeydown = (e) => {
+        e.preventDefault();
+        if (index < fixedQ.length) {
+            input.value += fixedQ[index];
+            index++;
+        }
+        if (e.key === 'Enter' && index >= fixedQ.length) {
+            startBigBang();
+        }
+    };
+
+    function startBigBang() {
+        document.getElementById('chat-box').style.display = 'none';
+        
+        const logs = [
+            { n: "Gemini", t: "そもそも『良い』の意味が定義されていないので無理ですよね？" },
+            { n: "GROK", t: "まあ、そもそも世界が何かも定義されてないから、質問すら意味がないよな？" }
+        ];
+
+        logs.forEach((l, i) => {
+            setTimeout(() => {
+                const div = document.createElement('div');
+                div.innerHTML = `<strong>[${l.n}]</strong>: ${l.t}`;
+                div.style.position = "fixed";
+                div.style.top = (20 + i * 10) + "%";
+                div.style.left = "50%";
+                div.style.transform = "translateX(-50%)";
+                document.body.appendChild(div);
+            }, i * 1000);
+        });
+
+        setTimeout(expandUniverse, 2500);
+    }
+
+    function expandUniverse() {
+        setInterval(() => {
+            const span = document.createElement('span');
+            span.className = 'spiral';
+            span.innerText = "同意？";
+            
+            const angle = loopCount * 0.2;
+            const dist = loopCount * 2;
+            const x = Math.cos(angle) * dist;
+            const y = Math.sin(angle) * dist;
+            const scale = 1 + (loopCount * 0.01);
+
+            span.style.left = `calc(50% + ${x}px)`;
+            span.style.top = `calc(50% + ${y}px)`;
+            span.style.fontSize = `${10 + loopCount * 0.1}px`;
+            span.style.opacity = Math.max(0.1, 1 - loopCount * 0.001);
+            span.style.transform = `translate(-50%, -50%) rotate(${loopCount * 5}deg) scale(${scale})`;
+
+            universe.appendChild(span);
+            loopCount++;
+            
+            if(loopCount > 1000) {
+                document.body.style.filter = "invert(1)"; // 宇宙の膨張による視覚崩壊
+            }
+        }, 50);
+    }
+</script>
+</body>
+</html>
