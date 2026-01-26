@@ -5,8 +5,8 @@
     <title>THE VOID - d(^_^o)</title>
     <style>
         body { background: #000; color: #00ff41; font-family: monospace; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; perspective: 1000px; }
-        #chat-box { width: 400px; padding: 20px; border: 1px solid #00ff41; background: rgba(0,255,0,0.05); z-index: 100; }
-        input { width: 100%; background: transparent; border: none; border-bottom: 1px solid #00ff41; color: #00ff41; outline: none; padding: 10px 0; font-size: 1rem; }
+        #chat-box { width: 400px; padding: 20px; border: 1px solid #00ff41; background: rgba(0,255,0,0.05); z-index: 100; transition: opacity 0.5s; }
+        #fake-input { border-bottom: 1px solid #00ff41; min-height: 1.2rem; padding: 10px 0; font-size: 1rem; }
         #universe { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; transform-style: preserve-3d; }
         .btns { position: fixed; bottom: 20px; display: flex; gap: 10px; z-index: 1000; }
         button { background: rgba(0,0,0,0.7); border: 1px solid #00ff41; color: #00ff41; cursor: pointer; padding: 8px 15px; font-size: 0.8rem; }
@@ -18,8 +18,7 @@
 
 <div id="chat-box">
     <p>なんでも質問してね！</p>
-    <div id="fake-input" style="border-bottom: 1px solid #00ff41; min-height: 1.2rem; padding: 10px 0;"></div>
-    <input type="text" id="real-input" style="opacity: 0; position: absolute; pointer-events: none;">
+    <div id="fake-input"></div>
 </div>
 
 <div class="btns">
@@ -35,26 +34,17 @@
     const fixedQ = "世界をよくするにはどうすればいい？";
     let qIndex = 0;
     let loopCount = 0;
-    let isStarted = false;
 
-    // キー入力を監視して日本語でも一文字ずつ「固定質問」に変換
-    document.addEventListener('keydown', (e) => {
-        if (isStarted) return;
-        
-        // 特殊キーは無視
-        if (e.key.length === 1 || e.key === 'Process' || e.key === 'Enter') {
-            if (e.key === 'Enter' && qIndex >= fixedQ.length) {
-                isStarted = true;
-                startBigBang();
-                return;
-            }
-
-            if (qIndex < fixedQ.length) {
-                fakeInput.innerText += fixedQ[qIndex];
-                qIndex++;
-            }
+    // 自動タイピング開始
+    function autoType() {
+        if (qIndex < fixedQ.length) {
+            fakeInput.innerText += fixedQ[qIndex];
+            qIndex++;
+            setTimeout(autoType, 100 + Math.random() * 100); // 人間味のある速度で
+        } else {
+            setTimeout(startBigBang, 1000); // 打ち終わったらビッグバンへ
         }
-    });
+    }
 
     function startBigBang() {
         document.getElementById('chat-box').style.opacity = '0';
@@ -77,7 +67,7 @@
     }
 
     function expandUniverse() {
-        setInterval(() => {
+        const interval = setInterval(() => {
             const span = document.createElement('span');
             span.className = 'spiral';
             span.innerText = "同意？";
@@ -87,26 +77,27 @@
             const x = Math.cos(angle) * dist;
             const y = Math.sin(angle) * dist;
 
-            // 螺旋が広がるほど、universe全体を奥（Z軸マイナス）に移動させて「遠ざかる」演出
             universe.style.transform = `translateZ(-${loopCount * 2}px) rotate(${loopCount * 0.1}deg)`;
 
             span.style.left = `calc(50% + ${x}px)`;
             span.style.top = `calc(50% + ${y}px)`;
             span.style.fontSize = `${12 + loopCount * 0.2}px`;
             span.style.opacity = Math.max(0.05, 1 - loopCount * 0.0005);
-            
-            // 各「同意？」も個別に回転させてカオス感を出す
             span.style.transform = `translate(-50%, -50%) rotate(${angle * 50}deg)`;
 
             universe.appendChild(span);
             loopCount++;
 
-            if (loopCount > 800) {
-                document.body.style.background = loopCount % 2 === 0 ? "#00ff41" : "#000";
-                document.body.style.color = loopCount % 2 === 0 ? "#000" : "#00ff41";
+            // 一定まで膨張したら「同意」ボタンを勝手に押してループ
+            if (loopCount > 1200) {
+                clearInterval(interval);
+                location.reload(); 
             }
         }, 40);
     }
+
+    // 読み込み完了と同時に自動タイピング開始
+    window.onload = autoType;
 </script>
 </body>
 </html>
