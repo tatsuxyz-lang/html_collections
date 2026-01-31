@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>3Way 座標％チェッカー</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; background: #222; color: #fff; margin: 0; padding: 20px; }
+        .controls { background: #333; padding: 15px; border-radius: 10px; margin-bottom: 20px; position: sticky; top: 10px; z-index: 100; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; border: none; border-radius: 5px; background: #444; color: white; transition: 0.3s; }
+        button.active { background: #007bff; box-shadow: 0 0 10px #007bff; }
+        #canvas-container { position: relative; display: inline-block; border: 2px solid #555; background: #000; cursor: crosshair; }
+        canvas { max-width: 100%; height: auto; }
+        .info { font-size: 1.8em; color: #00ffcc; margin: 15px 0; font-weight: bold; text-shadow: 0 0 5px #000; }
+        .mode-desc { font-size: 0.9em; color: #aaa; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="controls">
+        <div class="mode-desc" id="mode-text">モードを選択してください</div>
+        <button onclick="setMode('display')">1. ディスプレイ全体</button>
+        <button onclick="setMode('image')">2. 読み込んだ画像</button>
+        <button onclick="setMode('browser')">3. ブラウザ内操作</button>
+        <input type="file" id="upload" accept="image/*" style="display:none">
+        <div class="info" id="result">X: --% , Y: --%</div>
+    </div>
+
+    <div id="canvas-container">
+        <canvas id="canvas"></canvas>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const result = document.getElementById('result');
+        const modeText = document.getElementById('mode-text');
+        let currentMode = '';
+
+        async function setMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            if (mode === 'display') {
+                modeText.innerText = "【ディスプレイ全体】画面共有を許可して、映った画面内をクリックしてください";
+                try {
+                    const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+                    const video = document.createElement('video');
+                    video.srcObject = stream;
+                    video.play();
+                    video.onloadedmetadata = () => {
+                        canvas.width = video.videoWidth;
+                        canvas.height = video.videoHeight;
+                        const draw = () => {
+                            if (currentMode !== 'display') return;
+                            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                            requestAnimationFrame(draw);
+                        };
+                        draw();
+                    };
+                } catch (err) { alert("画面共有をキャンセルしました"); }
+            } 
+            else if (mode === 'image') {
+                modeText.innerText = "【画像読み込み】ファイルを選択してクリックしてください";
+                document.getElementById('upload').click();
+            }
+            else if (mode === 'browser') {
+                modeText.innerText = "【ブラウザ内】この灰色のエリア内での位置を計算します";
+                canvas.width = window.innerWidth;
+                canvas.height = 600;
+                ctx.fillStyle = "#444";
+                ctx.fillRect(0,0,canvas.width, canvas.height);
+            }
+        }
+
+        document.getElementById('upload').addEventListener('change', (e) => {
+            const img = new Image();
+            img.onload = () => {
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.drawImage(img, 0, 0);
+            };
+            img.src = URL.createObjectURL(e.target.files[0]);
+        });
+
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const x = (e.clientX - rect.left) * scaleX;
+            const y = (e.clientY - rect.top) * scaleY;
+            
+            const px = ((x / canvas.width) * 100).toFixed(2);
+            const py = ((y / canvas.height) * 100).toFixed(2);
+            
+            result.innerText = `X: ${px}% , Y: ${py}%`;
+            
+            ctx.fillStyle = "#ff0000";
+            ctx.beginPath();
+            ctx.arc(x, y, 8, 0, Math.PI * 2);
+            ctx.fill();
+        });
+    </script>
+</body>
+</html>
