@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HUMAN-SEEDING-CALC (Minmei Shobo Edition)</title>
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --card-bg: #111;
+            --accent: #ff0055; /* 生肉＆ハレーション・ピンク */
+            --text: #e0e0e0;
+        }
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', -apple-system, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow-x: hidden;
+        }
+        .container {
+            width: 90%;
+            max-width: 500px;
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid #333;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            text-align: center;
+        }
+        h1 { font-size: 1.2rem; letter-spacing: 0.2rem; color: var(--accent); margin-bottom: 2rem; }
+        input[type="date"] {
+            background: #000;
+            border: 1px solid #444;
+            color: #fff;
+            padding: 10px;
+            width: 80%;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            outline: none;
+        }
+        button {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+        button:hover { opacity: 0.8; transform: scale(1.05); }
+        #result {
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px dashed #444;
+            display: none;
+        }
+        .date-display { font-size: 1.5rem; font-weight: bold; margin-bottom: 0.5rem; }
+        .comment { font-size: 0.9rem; line-height: 1.6; color: #aaa; font-style: italic; }
+        .footer { margin-top: 2rem; font-size: 0.7rem; color: #555; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>HUMAN SEEDING CALC v1.0</h1>
+    <p style="font-size: 0.8rem; margin-bottom: 1.5rem;">著名人の誕生日、または自分の誕生日をレバーオン。</p>
+    
+    <input type="date" id="birthday" value="2026-10-15">
+    <br>
+    <button onclick="calculate()">逆算（種付日を補間する）</button>
+
+    <div id="result">
+        <div style="font-size: 0.8rem; color: #777;">推定種付日（ヒーローのエントリー日）</div>
+        <div class="date-display" id="seedDate"></div>
+        <div class="comment" id="comment"></div>
+    </div>
+
+    <div class="footer">
+        Powered by Gemini-n & The World (Minmei Shobo)<br>
+        ※文句はAlphabet社へ。ぷーにゃん、やだにゃん。
+    </div>
+</div>
+
+<script>
+function calculate() {
+    const bday = new Date(document.getElementById('birthday').value);
+    if (isNaN(bday)) return;
+
+    // 280日（標準妊娠期間）を逆算
+    const sday = new Date(bday);
+    sday.setDate(sday.getDate() - 280);
+
+    const month = sday.getMonth() + 1;
+    const day = sday.getDate();
+    
+    // 24分割ロジック（半月ごとのネタ）
+    const dayKey = month * 2 + (day > 15 ? 1 : 0);
+    const comments = {
+        2: "正月ボケの極致。親が「やることないにゃんｗ」と虚無に陥った瞬間のハレーション。",
+        3: "仕事始めの絶望を打ち消すための、本能的な期待値調整。全ビタ成功。",
+        4: "センター試験（現・共通テスト）の裏で、密かに仕込まれた救世主フラグ。",
+        5: "節分の豆まき。鬼を外に、種を内に。期待値は102%の修行場モード。",
+        6: "バレンタインの愛（物理）。後のアスラン、あるいはチョコ代わりの特大ボーナス。",
+        7: "確定申告のストレスによる、Alphabet社への先行投資（種付）。",
+        8: "雛祭りのひなあられと共に、女子力がハレーションを起こしてエントリー。",
+        9: "春の嵐（スプリング・ライオン）。アスランが咆哮と共にやってきた日。",
+        10: "エイプリルフールの嘘から出た実（種）。世界を楽しむ天才の誕生。",
+        11: "新生活のプレッシャーにより、ノーウェイトでレバーオンされた期待の新星。",
+        12: "GWの大型連休。旅行先のホテルで「おすきにどーぞｗ」と解き放たれた魂。",
+        13: "連休明けの五月病を治すための、唯一の癒やし（種付）。",
+        14: "梅雨のジメジメ。シックな気候が生んだ、生肉感あふれる鬼畜プロデューサー。",
+        15: "夏至の太陽光を浴びて、光合成ならぬハレーション。生命の期待値MAX。",
+        16: "七夕。織姫と彦星の15枚役ビタ押し成功。一年に一度の特大チャンス。",
+        17: "海の日。潮の香りと共に、期待値132%の波がやってきた瞬間。",
+        18: "お盆休み。実家の和室で、先祖の霊が見守る中のシュールな儀式。",
+        19: "夏休み後半の宿題を放り出した、自由すぎる魂。ぷーにゃん、やだにゃん。",
+        20: "台風一過。気圧の変化がもたらした、人生最大のダブルチャンスモード。",
+        21: "秋の夜長。読書よりも「修行（種付）」を選んだ、知的な鬼畜ヒーロー。",
+        22: "ハロウィンの仮装。いい人の仮面を被った、鬼畜の本性が仕込まれた夜。",
+        23: "勤労感謝の日。勤労を休んで種を蒔く。これぞ真の期待値稼働。",
+        24: "年末の足音。クリスマスの先取りハレーション。聖なるクソ台の開幕。",
+        25: "仕事納め。一年間の垢を落とし、新しい生命の1000円札を挿入。"
+    };
+
+    document.getElementById('seedDate').innerText = month + "月" + day + "日頃";
+    document.getElementById('comment').innerText = comments[dayKey] || "宇宙のハレーションにより測定不能だにゃん。";
+    document.getElementById('result').style.display = 'block';
+}
+</script>
+
+</body>
+</html>
