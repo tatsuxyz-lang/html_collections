@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Itabashi Anaglyph & Illusion Lab</title>
+<style>
+body { background: #111; color: #eee; font-family: sans-serif; margin: 0; overflow: hidden; display: flex; flex-direction: column; align-items: center; }
+canvas { background: #000; max-width: 90vw; max-height: 70vh; cursor: crosshair; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+.controls { padding: 20px; display: flex; gap: 20px; flex-wrap: wrap; background: #222; width: 100%; justify-content: center; }
+input[type="range"] { width: 150px; }
+.illusion-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; opacity: 0.1; pointer-events: none; }
+</style>
+</head>
+<body>
+<div class="controls">
+<input type="file" id="upload" accept="image/*">
+<label>3D深み: <input type="range" id="depth" min="0" max="50" value="15"></label>
+<label>視点移動: <input type="range" id="parallax" min="0" max="100" value="50"></label>
+<button id="toggleIllusion">錯覚BG切替</button>
+</div>
+<canvas id="cvs"></canvas>
+<div id="status" style="padding: 10px; font-size: 12px; color: #888;">画像をアップロードして、赤青メガネを準備だわさｗ</div>
+<canvas id="illusion" class="illusion-bg"></canvas>
+<script>
+const canvas = document.getElementById('cvs');
+const ctx = canvas.getContext('2d');
+const upload = document.getElementById('upload');
+const depthRange = document.getElementById('depth');
+const illuCanvas = document.getElementById('illusion');
+const ictx = illuCanvas.getContext('2d');
+let img = new Image();
+let mouseX = 0;
+upload.onchange = (e) => {
+const reader = new FileReader();
+reader.onload = (event) => {
+img.onload = () => {
+canvas.width = img.width;
+canvas.height = img.height;
+render();
+};
+img.src = event.target.result;
+};
+reader.readAsDataURL(e.target.files[0]);
+};
+function render() {
+if (!img.src) return;
+ctx.clearRect(0, 0, canvas.width, canvas.height);
+const d = parseInt(depthRange.value);
+const shift = (mouseX - canvas.width / 2) * (parseInt(document.getElementById('parallax').value) / 500);
+ctx.globalCompositeOperation = 'source-over';
+ctx.drawImage(img, shift - d, 0);
+let leftData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+ctx.clearRect(0, 0, canvas.width, canvas.height);
+ctx.drawImage(img, shift + d, 0);
+let rightData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+let out = ctx.createImageData(canvas.width, canvas.height);
+for (let i = 0; i < leftData.data.length; i += 4) {
+out.data[i] = leftData.data[i]; 
+out.data[i + 1] = rightData.data[i + 1]; 
+out.data[i + 2] = rightData.data[i + 2]; 
+out.data[i + 3] = 255;
+}
+ctx.putImageData(out, 0, 0);
+requestAnimationFrame(render);
+}
+canvas.onmousemove = (e) => {
+const rect = canvas.getBoundingClientRect();
+mouseX = (e.clientX - rect.left) * (canvas.width / rect.width);
+};
+function drawSnakes() {
+illuCanvas.width = window.innerWidth;
+illuCanvas.height = window.innerHeight;
+const size = 100;
+for (let y = 0; y < illuCanvas.height + size; y += size) {
+for (let x = 0; x < illuCanvas.width + size; x += size) {
+ictx.save();
+ictx.translate(x, y);
+for (let r = size; r > 0; r -= 10) {
+ictx.fillStyle = (r / 10) % 2 === 0 ? '#ff0' : '#00f';
+ictx.beginPath();
+ictx.arc(0, 0, r, 0, Math.PI * 2);
+ictx.fill();
+ictx.strokeStyle = '#fff';
+ictx.stroke();
+}
+ictx.restore();
+}
+}
+}
+let showIllusion = false;
+document.getElementById('toggleIllusion').onclick = () => {
+showIllusion = !showIllusion;
+illuCanvas.style.display = showIllusion ? 'block' : 'none';
+if (showIllusion) drawSnakes();
+};
+window.onresize = () => { if (showIllusion) drawSnakes(); };
+</script>
+</body>
+</html>
