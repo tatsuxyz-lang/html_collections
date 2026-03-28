@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TerminalX | Live Stream Log</title>
+    <style>
+        body { background: #000; color: #0f0; font-family: monospace; padding: 20px; line-height: 1.5; }
+        #input-area { border-bottom: 1px solid #0f0; padding-bottom: 20px; margin-bottom: 20px; }
+        input, button { background: #000; border: 1px solid #0f0; color: #0f0; padding: 5px 10px; font-family: monospace; }
+        button:hover { background: #0f0; color: #000; cursor: pointer; }
+        .post { margin-bottom: 10px; border-left: 3px solid #050; padding-left: 10px; }
+        .latest-time { color: #fff; font-weight: bold; margin-bottom: 5px; font-size: 0.8em; }
+        .handle { color: #8f8; font-weight: bold; }
+        .msg { word-wrap: break-word; }
+    </style>
+</head>
+<body>
+
+<div id="input-area">
+    <div>>> SESSION LOG / NO LOGIN REQUIRED</div>
+    <input type="text" id="handle" placeholder="Handle Name" maxlength="20">
+    <input type="text" id="message" placeholder="Type your message..." style="width: 60%;">
+    <button onclick="postData()">SEND</button>
+</div>
+
+<div id="log-display"></div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+<script>
+    // --- INSERT YOUR FIREBASE CONFIG HERE ---
+    const firebaseConfig = {
+        apiKey: "YOUR_API_KEY",
+        authDomain: "YOUR_AUTH_DOMAIN",
+        databaseURL: "YOUR_DATABASE_URL",
+        projectId: "YOUR_PROJECT_ID",
+        storageBucket: "YOUR_STORAGE_BUCKET",
+        messagingSenderId: "YOUR_SENDER_ID",
+        appId: "YOUR_APP_ID"
+    };
+    // -----------------------------------------
+
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+    const logRef = database.ref('session_logs');
+
+    function postData() {
+        const handle = document.getElementById('handle').value || 'Anonymous';
+        const message = document.getElementById('message').value;
+        if (!message) return;
+
+        logRef.push({
+            handle: handle,
+            message: message,
+            timestamp: firebase.database.ServerValue.TIMESTAMP
+        });
+        document.getElementById('message').value = '';
+    }
+
+    // Listener for real-time updates
+    logRef.orderByChild('timestamp').on('value', (snapshot) => {
+        const display = document.getElementById('log-display');
+        display.innerHTML = '';
+        
+        let posts = [];
+        snapshot.forEach((childSnapshot) => {
+            posts.unshift(childSnapshot.val()); // Reverse order (latest top)
+        });
+
+        posts.forEach((data, index) => {
+            const div = document.createElement('div');
+            div.className = 'post';
+            
+            // Only show timestamp for the LATEST post
+            let timeStr = '';
+            if (index === 0) {
+                const d = new Date(data.timestamp);
+                timeStr = `<div class="latest-time">[ LAST UPDATE: ${d.toLocaleTimeString()} ]</div>`;
+            }
+
+            div.innerHTML = `
+                ${timeStr}
+                <span class="handle">@${data.handle}:</span>
+                <span class="msg">${data.message}</span>
+            `;
+            display.appendChild(div);
+        });
+    });
+</script>
+</body>
+</html>
